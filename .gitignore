@@ -1,0 +1,12 @@
+# Build artifacts
+backend/target/
+
+# Node
+frontend/node_modules/
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store

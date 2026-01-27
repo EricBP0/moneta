@@ -17,19 +17,19 @@ POST /auth/register
 Request:
 { "email":"", "name":"", "password":"" }
 Response:
-{ "accessToken":"...", "user": { "id":1, "email":"", "name":"" } }
+{ "accessToken":"...", "refreshToken":"...", "user": { "id":1, "email":"", "name":"" } }
 
 POST /auth/login
 Request:
 { "email":"", "password":"" }
 Response:
-{ "accessToken":"...", "user": { "id":1, "email":"", "name":"" } }
+{ "accessToken":"...", "refreshToken":"...", "user": { "id":1, "email":"", "name":"" } }
 
 POST /auth/refresh (opcional se adotado refresh token)
 Request:
 { "refreshToken": "..." }
 Response:
-{ "accessToken":"..." }
+{ "accessToken":"...", "refreshToken":"..." }
 
 GET /me
 Response:
@@ -194,8 +194,8 @@ Response:
 
 ## Import (CSV) — MVP
 POST /import/csv (multipart)
-CSV esperado (colunas obrigatórias): date, description, amount
-CSV opcionais: account, category
+CSV esperado (colunas obrigatórias): date, description, amount, accountId
+CSV opcional: category (se não existir, marcar como UNCATEGORIZED)
 GET /import/batches
 GET /import/batches/{id}
 

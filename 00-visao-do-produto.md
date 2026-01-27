@@ -9,8 +9,8 @@
 Criar um web app pessoal (React) + API (Spring) para controle financeiro baseado em transações, orçamento e metas.
 
 ## Público-alvo
-- MVP single-user.
-- Manter user_id nas tabelas para evoluir para multiusuário no futuro.
+- MVP multiusuário com isolamento por user_id via JWT.
+- Sem multi-tenant ou compartilhamento entre usuários.
 
 ## Metas de sucesso
 - Em 5 minutos por semana eu consigo:

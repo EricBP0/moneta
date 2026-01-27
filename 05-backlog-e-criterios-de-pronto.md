@@ -22,7 +22,7 @@
 ### Sprint 3 — Orçamentos e alertas
 - [ ] CRUD Budgets
 - [ ] Cálculo de progresso por categoria/subcategoria
-- [ ] Geração de alertas 80%/100%
+- [ ] Geração de alertas 80%/100% (apenas orçamento no MVP)
 - [ ] Tela de orçamento (teto + progresso)
 
 ### Sprint 4 — Metas e projeção até 07/2027
@@ -30,6 +30,7 @@
 - [ ] Projeção mensal
 - [ ] Simulação simples (juros default 0, editável depois)
 - [ ] Tela de metas + progresso
+- [ ] Alertas de metas (P2)
 
 ### Sprint 5 — Import
 - [ ] Import CSV com colunas date, description, amount (+ opcionais account/category)

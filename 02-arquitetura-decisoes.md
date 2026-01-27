@@ -8,7 +8,8 @@
 - Deploy local: Docker Compose (API + Postgres)
 
 ## Multiusuário (MVP)
-- MVP single-user, mantendo user_id nas tabelas para evolução futura.
+- MVP multiusuário com isolamento por user_id via JWT.
+- Sem multi-tenant ou compartilhamento entre usuários.
 - user_id sempre derivado do JWT (sem header X-User-Id ou usuário default).
 - Endpoints públicos: /auth/register e /auth/login (e /auth/refresh se adotado).
 - /me e todos os demais endpoints são protegidos.
@@ -18,7 +19,8 @@
 - direction: IN | OUT (sem números negativos)
 - descriptionNorm: uppercase, sem acentos, trim, espaços normalizados
 - Soft delete: accounts/categories (isActive=false)
-- Saldo de conta derivado: saldo_inicial + soma das transações POSTED/CONFIRMED
+- Saldo de conta derivado: saldo_inicial + soma das transações POSTED
+- PENDING/CANCELED não entram no saldo.
 - Transferências são duas transações ligadas por transferGroupId
 - Transações de cartão:
   - CARD_PURCHASE não afeta saldo de conta
@@ -40,6 +42,7 @@
 
 ## Alertas
 - Apenas in-app via tabela/endpoint de alerts (sem e-mail/push no MVP)
+- MVP só gera alertas de orçamento (80% e 100% do teto). Alertas de meta ficam P2.
 
 ## Metas e projeção
 - Simulação simples com juros default 0 (editável depois)
