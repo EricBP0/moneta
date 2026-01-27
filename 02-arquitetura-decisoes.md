@@ -7,6 +7,12 @@
 - Auth: JWT
 - Deploy local: Docker Compose (API + Postgres)
 
+## Multiusuário (MVP)
+- MVP multiusuário baseado em user_id (sem multi-tenant complexo).
+- user_id sempre derivado do JWT (sem header X-User-Id ou usuário default).
+- Endpoints públicos: /auth/register e /auth/login (e /auth/refresh se adotado).
+- /me e todos os demais endpoints são protegidos.
+
 ## Padrões de domínio
 - amountCents (BIGINT) sempre positivo
 - direction: IN | OUT (sem números negativos)
@@ -31,3 +37,8 @@
 - Tokens (se houver Open Finance no futuro) criptografados em repouso
 - CORS restrito ao front
 - Rate limit simples (opcional)
+- Se usar refresh token, armazenar apenas hash + expiração + revogação.
+
+## Changelog
+- Adicionei decisões sobre MVP multiusuário, origem do user_id via JWT e escopo de endpoints públicos/protegidos.
+- Incluí orientação de segurança para armazenamento de refresh tokens (hash + expiração + revogação).

@@ -2,6 +2,9 @@
 
 ## RF-01 — Autenticação
 - Cadastro, login e sessão via JWT.
+- Endpoints públicos: /auth/register, /auth/login (e /auth/refresh se adotado).
+- Endpoints protegidos: /me e todos os demais.
+- user_id sempre derivado do JWT (sem X-User-Id ou usuário default).
 - Critérios de aceite:
   - POST /api/auth/login retorna accessToken
   - Rotas protegidas exigem Authorization: Bearer <token>
@@ -72,3 +75,8 @@
 - RNF-05: Logs sem dados sensíveis
 - RNF-06: Testes unitários para regras e orçamento
 - RNF-07: Docker Compose para ambiente local
+- RNF-08: Autorização sempre baseada no user_id do JWT
+
+## Changelog
+- Detalhei endpoints públicos/protegidos e a origem do user_id via JWT no requisito de autenticação.
+- Adicionei requisito não funcional reforçando autorização baseada no user_id do JWT.
