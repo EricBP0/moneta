@@ -27,6 +27,10 @@
   - amountCents sempre positivo
   - direction define se entra ou sai
   - Transferência é representada por 2 transações ligadas por transferGroupId
+- Status no MVP:
+  - POSTED entra no saldo.
+  - PENDING/CANCELED não entram no saldo.
+  - Manual e import CSV criam POSTED por padrão.
 - Prioridade: P1
 
 ## RF-04 — Categorias/Subcategorias
@@ -73,8 +77,8 @@
 - Prioridade: P1
 
 ## RF-10 — Importação CSV (MVP)
-- Importar CSV com colunas obrigatórias: date, description, amount.
-- Colunas opcionais: account, category.
+- Importar CSV com colunas obrigatórias: date, description, amount, accountId.
+- Coluna opcional: category (se não existir, marcar como UNCATEGORIZED).
 - amount pode ser positivo/negativo; converter para amountCents + direction.
 - Criar import_batch + import_row e aplicar dedupe simples por hash.
 - Prioridade: P1
@@ -89,6 +93,11 @@
 - CARD_PAYMENT reduz saldo da conta e pode marcar card_bill como paga.
 - Prioridade: P1
 
+## RF-13 — Alertas (MVP)
+- Alertas no MVP apenas para orçamento (80% e 100% do teto).
+- Alertas de meta ficam como P2.
+- Prioridade: P1
+
 
 ## RNF — Requisitos Não Funcionais
 - RNF-01: Backend em Java + Spring Boot
@@ -99,7 +108,7 @@
 - RNF-06: Testes unitários para regras e orçamento
 - RNF-07: Docker Compose para ambiente local
 - RNF-08: Autorização sempre baseada no user_id do JWT
-- RNF-09: MVP single-user, mantendo user_id nas tabelas para evolução futura
+- RNF-09: MVP multiusuário com isolamento por user_id via JWT (sem multi-tenant/compartilhamento)
 
 ## Changelog
 - Adicionei requisitos para saldo derivado, transferências, importação CSV e auditoria.

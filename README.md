@@ -14,4 +14,4 @@ Built with:
 - **Frontend:** React.js
 - **Database:** PostgreSQL
 
-This project is primarily intended for personal use, but is designed with scalable architecture principles.
+This project targets multiple users with isolation by user_id via JWT (no multi-tenant sharing).

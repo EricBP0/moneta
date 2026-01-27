@@ -1,0 +1,11 @@
+{
+  "name": "moneta-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Moneta frontend placeholder",
+  "scripts": {
+    "dev": "echo 'frontend setup pending'",
+    "build": "echo 'frontend build pending'",
+    "test": "echo 'frontend tests pending'"
+  }
+}

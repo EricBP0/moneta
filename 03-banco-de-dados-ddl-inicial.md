@@ -141,7 +141,7 @@ CREATE TABLE txn (
   external_id TEXT,
   import_batch_id BIGINT REFERENCES import_batch(id) ON DELETE SET NULL,
   import_row_id BIGINT REFERENCES import_row(id) ON DELETE SET NULL,
-  status TEXT NOT NULL DEFAULT 'POSTED',
+  status TEXT NOT NULL DEFAULT 'POSTED', -- POSTED/PENDING/CANCELED
   categorized_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, external_source, external_id)
@@ -186,7 +186,7 @@ CREATE TABLE goal_contribution (
 CREATE TABLE alert (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL, -- BUDGET_80, BUDGET_100, GOAL_BEHIND etc.
+  type TEXT NOT NULL, -- BUDGET_80, BUDGET_100 (GOAL_BEHIND fica para P2)
   month_ref DATE,
   category_id BIGINT REFERENCES category(id),
   message TEXT NOT NULL,
