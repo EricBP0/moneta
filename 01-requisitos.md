@@ -2,6 +2,9 @@
 
 ## RF-01 — Autenticação
 - Cadastro, login e sessão via JWT.
+- Endpoints públicos: /auth/register, /auth/login (e /auth/refresh se adotado).
+- Endpoints protegidos: /me e todos os demais.
+- user_id sempre derivado do JWT (sem X-User-Id ou usuário default).
 - Critérios de aceite:
   - POST /api/auth/login retorna accessToken
   - Rotas protegidas exigem Authorization: Bearer <token>
@@ -23,6 +26,7 @@
 - Critérios:
   - amountCents sempre positivo
   - direction define se entra ou sai
+  - Transferência é representada por 2 transações ligadas por transferGroupId
 - Prioridade: P1
 
 ## RF-04 — Categorias/Subcategorias
@@ -48,19 +52,41 @@
 - Dashboard mostra:
   - gasto do mês, teto, percentual
 - Alertas:
-  - 80% e 100% do teto (notificação interna)
+  - 80% e 100% do teto (notificação interna/in-app)
 - Prioridade: P1
 
 ## RF-07 — Metas (Goals) e Projeção até 07/2027
 - Criar metas: Emergência, Casamento/Reforma
 - Registrar aportes (manual)
 - Projeção mensal com aporte planejado
-- Simulação: Poupança vs Tesouro Selic (taxas editáveis)
+- Simulação simples com juros default 0 (editável depois)
 - Prioridade: P2
 
 ## RF-08 — Dashboard mensal
 - Resumo do mês:
   - Entradas, saídas, saldo estimado, gasto por categoria
+- Prioridade: P1
+
+## RF-09 — Saldo de conta (derivado)
+- Saldo = saldo_inicial + soma das transações com status POSTED/CONFIRMED.
+- Transações com tipo CARD_PURCHASE não afetam saldo; CARD_PAYMENT afeta.
+- Prioridade: P1
+
+## RF-10 — Importação CSV (MVP)
+- Importar CSV com colunas obrigatórias: date, description, amount.
+- Colunas opcionais: account, category.
+- amount pode ser positivo/negativo; converter para amountCents + direction.
+- Criar import_batch + import_row e aplicar dedupe simples por hash.
+- Prioridade: P1
+
+## RF-11 — Auditoria de categorização
+- Guardar categorizationMode, ruleId (quando aplicado) e importBatchId.
+- Manter timestamps relevantes (createdAt, categorizedAt quando houver).
+- Prioridade: P1
+
+## RF-12 — Cartão e fatura mínima
+- CARD_PURCHASE gera transação vinculada a card_bill e não afeta saldo da conta.
+- CARD_PAYMENT reduz saldo da conta e pode marcar card_bill como paga.
 - Prioridade: P1
 
 
@@ -72,3 +98,11 @@
 - RNF-05: Logs sem dados sensíveis
 - RNF-06: Testes unitários para regras e orçamento
 - RNF-07: Docker Compose para ambiente local
+- RNF-08: Autorização sempre baseada no user_id do JWT
+- RNF-09: MVP single-user, mantendo user_id nas tabelas para evolução futura
+
+## Changelog
+- Adicionei requisitos para saldo derivado, transferências, importação CSV e auditoria.
+- Ajustei metas para simulação simples com juros default 0 e defini regras mínimas de cartão.
+- Esclareci que alertas são in-app no MVP.
+- Registrei o MVP como single-user, mantendo user_id para evolução futura.
