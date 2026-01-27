@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.moneta.auth.UserRepository;
 import com.moneta.account.AccountDtos.AccountRequest;
+import com.moneta.txn.TxnRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,11 +24,14 @@ class AccountServiceTest {
   @Mock
   private UserRepository userRepository;
 
+  @Mock
+  private TxnRepository txnRepository;
+
   private AccountService accountService;
 
   @BeforeEach
   void setup() {
-    accountService = new AccountService(accountRepository, userRepository);
+    accountService = new AccountService(accountRepository, userRepository, txnRepository);
   }
 
   @Test
@@ -47,6 +51,43 @@ class AccountServiceTest {
     var result = accountService.list(1L);
 
     assertThat(result).hasSize(1);
+  }
+
+  @Test
+  void listWithBalancesIncludesPostedTxns() {
+    Account account = new Account();
+    account.setName("Conta");
+    account.setInitialBalanceCents(100L);
+    setAccountId(account, 10L);
+    when(accountRepository.findAllByUserIdAndIsActiveTrue(1L)).thenReturn(List.of(account));
+
+    TxnRepository.TxnBalanceProjection projection = new TxnRepository.TxnBalanceProjection() {
+      @Override
+      public Long getAccountId() {
+        return account.getId();
+      }
+
+      @Override
+      public Long getBalanceCents() {
+        return 250L;
+      }
+    };
+    when(txnRepository.findPostedBalancesByUserId(1L)).thenReturn(List.of(projection));
+
+    var result = accountService.listWithBalances(1L);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.getFirst().balanceCents()).isEqualTo(350L);
+  }
+
+  private void setAccountId(Account account, Long id) {
+    try {
+      var field = Account.class.getDeclaredField("id");
+      field.setAccessible(true);
+      field.set(account, id);
+    } catch (ReflectiveOperationException ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
   @Test

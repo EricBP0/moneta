@@ -19,6 +19,7 @@ public class AccountDtos {
     String type,
     String currency,
     Long initialBalanceCents,
+    Long balanceCents,
     boolean isActive
   ) {}
 }

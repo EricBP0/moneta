@@ -26,7 +26,7 @@ public class AccountController {
 
   @GetMapping
   public List<AccountResponse> list(@AuthenticationPrincipal UserPrincipal principal) {
-    return accountService.list(principal.getId()).stream()
+    return accountService.listWithBalances(principal.getId()).stream()
       .map(this::toResponse)
       .toList();
   }
@@ -36,7 +36,8 @@ public class AccountController {
     @AuthenticationPrincipal UserPrincipal principal,
     @Valid @RequestBody AccountRequest request
   ) {
-    return toResponse(accountService.create(principal.getId(), request));
+    Account account = accountService.create(principal.getId(), request);
+    return toResponse(accountService.getWithBalance(principal.getId(), account.getId()));
   }
 
   @GetMapping("/{id}")
@@ -44,7 +45,7 @@ public class AccountController {
     @AuthenticationPrincipal UserPrincipal principal,
     @PathVariable Long id
   ) {
-    return toResponse(accountService.get(principal.getId(), id));
+    return toResponse(accountService.getWithBalance(principal.getId(), id));
   }
 
   @PatchMapping("/{id}")
@@ -53,7 +54,8 @@ public class AccountController {
     @PathVariable Long id,
     @Valid @RequestBody AccountRequest request
   ) {
-    return toResponse(accountService.update(principal.getId(), id, request));
+    Account account = accountService.update(principal.getId(), id, request);
+    return toResponse(accountService.getWithBalance(principal.getId(), account.getId()));
   }
 
   @DeleteMapping("/{id}")
@@ -64,7 +66,8 @@ public class AccountController {
     accountService.softDelete(principal.getId(), id);
   }
 
-  private AccountResponse toResponse(Account account) {
+  private AccountResponse toResponse(AccountService.AccountWithBalance accountWithBalance) {
+    Account account = accountWithBalance.account();
     return new AccountResponse(
       account.getId(),
       account.getInstitutionId(),
@@ -72,6 +75,7 @@ public class AccountController {
       account.getType(),
       account.getCurrency(),
       account.getInitialBalanceCents(),
+      accountWithBalance.balanceCents(),
       account.isActive()
     );
   }
