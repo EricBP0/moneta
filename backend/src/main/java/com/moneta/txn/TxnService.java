@@ -113,7 +113,7 @@ public class TxnService {
     txn.setDescription(request.description());
     txn.setOccurredAt(request.occurredAt());
     txn.setMonthRef(request.occurredAt().format(MONTH_FORMATTER));
-    txn.setStatus(request.status() == null ? TxnStatus.POSTED : request.status());
+    txn.setStatus(request.status() == null ? txn.getStatus() : request.status());
     txn.setCategoryId(request.categoryId());
     txn.setSubcategoryId(request.subcategoryId());
     txn.setRuleId(request.ruleId());

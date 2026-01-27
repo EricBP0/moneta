@@ -25,3 +25,6 @@ CREATE TABLE txn (
 CREATE INDEX idx_txn_user_month ON txn (user_id, month_ref);
 CREATE INDEX idx_txn_user_account_occurred ON txn (user_id, account_id, occurred_at);
 CREATE INDEX idx_txn_transfer_group ON txn (transfer_group_id);
+CREATE INDEX idx_txn_posted_active_balance
+  ON txn (user_id, account_id)
+  WHERE status = 'POSTED' AND is_active = TRUE;
