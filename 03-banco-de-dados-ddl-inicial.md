@@ -7,7 +7,7 @@
 - Valores: BIGINT em centavos
 
 ```sql
-CREATE TABLE app_user (
+CREATE TABLE users (
   id BIGSERIAL PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
@@ -15,16 +15,27 @@ CREATE TABLE app_user (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE refresh_token (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE institution (
   id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   code TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, name)
 );
 
 CREATE TABLE account (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   institution_id BIGINT REFERENCES institution(id),
   name TEXT NOT NULL,
   type TEXT NOT NULL, -- CHECKING, SAVINGS, CREDIT_CARD, WALLET, INVESTMENT
@@ -38,7 +49,7 @@ CREATE TABLE account (
 
 CREATE TABLE category (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   color TEXT,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -57,7 +68,7 @@ CREATE TABLE subcategory (
 
 CREATE TABLE import_batch (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   source TEXT NOT NULL, -- CSV, OFX, BELVO, PLUGGY
   filename TEXT,
   started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -68,7 +79,7 @@ CREATE TABLE import_batch (
 
 CREATE TABLE card_bill (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   account_id BIGINT NOT NULL REFERENCES account(id) ON DELETE CASCADE, -- type=CREDIT_CARD
   month_ref DATE NOT NULL, -- use 1º dia do mês
   due_date DATE,
@@ -81,7 +92,7 @@ CREATE TABLE card_bill (
 
 CREATE TABLE txn (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   account_id BIGINT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
   occurred_at DATE NOT NULL,
   posted_at DATE,
@@ -108,7 +119,7 @@ CREATE INDEX idx_txn_user_category_date ON txn(user_id, category_id, occurred_at
 
 CREATE TABLE rule (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   priority INT NOT NULL DEFAULT 100,
@@ -124,7 +135,7 @@ CREATE INDEX idx_rule_user_priority ON rule(user_id, priority);
 
 CREATE TABLE budget (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   month_ref DATE NOT NULL, -- 1º dia do mês
   category_id BIGINT NOT NULL REFERENCES category(id),
   subcategory_id BIGINT REFERENCES subcategory(id),
@@ -135,7 +146,7 @@ CREATE TABLE budget (
 
 CREATE TABLE goal (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   goal_type TEXT NOT NULL, -- EMERGENCY, WEDDING_REFORM, OTHER
   target_cents BIGINT NOT NULL,
@@ -156,7 +167,7 @@ CREATE TABLE goal_contribution (
 
 CREATE TABLE alert (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   type TEXT NOT NULL, -- BUDGET_80, BUDGET_100, GOAL_BEHIND etc.
   month_ref DATE,
   category_id BIGINT REFERENCES category(id),
@@ -164,3 +175,8 @@ CREATE TABLE alert (
   is_read BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+## Changelog
+- Renomeei a tabela app_user para users e atualizei todas as FKs para refletir o MVP multiusuário.
+- Adicionei user_id em institution para manter dados por usuário.
+- Incluí a tabela refresh_token para suportar refresh tokens com hash, expiração e revogação.

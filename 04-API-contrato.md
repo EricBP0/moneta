@@ -2,6 +2,16 @@
 
 Base URL: /api
 
+## Headers padrão
+- Content-Type: application/json
+- Authorization: Bearer <accessToken> (obrigatório em /me e demais endpoints protegidos)
+
+## Erros padrão
+- 400 Bad Request: { "error": "VALIDATION_ERROR", "message": "..." }
+- 401 Unauthorized: { "error": "UNAUTHORIZED", "message": "Token inválido/ausente" }
+- 403 Forbidden: { "error": "FORBIDDEN", "message": "Sem acesso ao recurso" }
+- 404 Not Found: { "error": "NOT_FOUND", "message": "Recurso não encontrado" }
+
 ## Auth
 POST /auth/register
 Request:
@@ -14,6 +24,12 @@ Request:
 { "email":"", "password":"" }
 Response:
 { "accessToken":"...", "user": { "id":1, "email":"", "name":"" } }
+
+POST /auth/refresh (opcional se adotado refresh token)
+Request:
+{ "refreshToken": "..." }
+Response:
+{ "accessToken":"..." }
 
 GET /me
 Response:
@@ -170,3 +186,7 @@ POST /import/csv (multipart)
 POST /import/ofx (multipart)
 GET /import/batches
 GET /import/batches/{id}
+
+## Changelog
+- Adicionei headers padrão e formato de erros (incluindo 401/403) para o contrato da API.
+- Incluí o endpoint opcional de refresh token e clarifiquei a proteção de endpoints via Authorization Bearer.

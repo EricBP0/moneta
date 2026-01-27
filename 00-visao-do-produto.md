@@ -9,8 +9,8 @@
 Criar um web app pessoal (React) + API (Spring) para controle financeiro baseado em transações, orçamento e metas.
 
 ## Público-alvo
-- Usuário único (eu).
-- Arquitetura preparada para multiusuário no futuro (opcional).
+- MVP multiusuário baseado em user_id (sem multi-tenant complexo).
+- user_id sempre derivado do JWT (sem header X-User-Id ou usuário default).
 
 ## Metas de sucesso
 - Em 5 minutos por semana eu consigo:
@@ -24,6 +24,7 @@ Criar um web app pessoal (React) + API (Spring) para controle financeiro baseado
 - Guardrails > perfeição: regras simples de categoria primeiro (sem IA no MVP).
 - Dados consistentes: valores em centavos + IN/OUT (sem negativo).
 - Tudo auditável: sempre saber como uma transação foi categorizada (manual/regra).
+- Segurança por padrão: autenticação JWT obrigatória fora dos endpoints públicos.
 
 ## Escopo do MVP
 - Contas (PF/PJ, cartão, carteira)
@@ -40,3 +41,7 @@ Criar um web app pessoal (React) + API (Spring) para controle financeiro baseado
 - IA/ML avançado para categoria
 - Integrações de pagamento (Pix/boleto)
 - App nativo mobile (primeiro PWA)
+
+## Changelog
+- Atualizei o público-alvo para refletir MVP multiusuário com user_id vindo do JWT, sem multi-tenant complexo.
+- Reforcei o princípio de segurança com autenticação JWT obrigatória fora dos endpoints públicos, alinhado ao escopo do MVP.

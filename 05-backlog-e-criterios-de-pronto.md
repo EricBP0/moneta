@@ -3,7 +3,7 @@
 ## Backlog (Sprints)
 
 ### Sprint 1 — Base
-- [ ] Auth (register/login/me)
+- [ ] Auth (register/login/refresh opcional + /me)
 - [ ] CRUD Institutions
 - [ ] CRUD Accounts
 - [ ] CRUD Categories/Subcategories
@@ -41,6 +41,7 @@
 - Validação de request (400 com mensagem clara)
 - Retornos padronizados
 - Autorização por usuário (nunca vazar dados de outro user)
+- Responder 401 para token ausente/inválido e 403 para acesso proibido
 - Teste unitário ou teste de integração (mínimo para serviços críticos)
 
 ### Para regras e orçamento (mínimo obrigatório)
@@ -57,3 +58,12 @@
 - Loading / Empty / Error states
 - Filtros funcionam
 - Totais batem com backend
+
+### Para autenticação (mínimo obrigatório)
+- Endpoints públicos limitados a /auth/register, /auth/login (e /auth/refresh se adotado)
+- /me e demais endpoints exigem Authorization: Bearer <token>
+- user_id deve ser derivado do JWT (sem X-User-Id)
+
+## Changelog
+- Atualizei o Sprint 1 para explicitar o fluxo de auth com refresh opcional.
+- Incluí critérios de pronto para 401/403 e regras mínimas de autenticação com user_id via JWT.
