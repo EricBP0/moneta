@@ -50,7 +50,8 @@ Request:
   "institutionId": 1,
   "name": "Itaú PJ",
   "type": "CHECKING",
-  "currency": "BRL"
+  "currency": "BRL",
+  "initialBalanceCents": 0
 }
 
 GET /accounts/{id}
@@ -71,6 +72,11 @@ DELETE /subcategories/{id}
 
 
 ## Transactions
+Notas:
+- Transferência é registrada como duas transações com o mesmo transferGroupId.
+- txnType: STANDARD, TRANSFER, CARD_PURCHASE, CARD_PAYMENT.
+- CARD_PURCHASE não afeta saldo; CARD_PAYMENT afeta saldo e pode quitar card_bill.
+
 GET /txns?month=YYYY-MM&accountId=&categoryId=&q=&direction=
 Response:
 {
@@ -82,9 +88,12 @@ Response:
       "description": "POSTO SHELL",
       "amountCents": 25000,
       "direction": "OUT",
+      "txnType": "STANDARD",
       "categoryId": 3,
       "subcategoryId": 8,
-      "categorizationMode": "RULE"
+      "categorizationMode": "RULE",
+      "ruleId": 4,
+      "transferGroupId": null
     }
   ],
   "totals": { "inCents": 0, "outCents": 25000, "netCents": -25000 }
@@ -98,8 +107,10 @@ Request:
   "description": "Posto Shell - gasolina",
   "amountCents": 25000,
   "direction": "OUT",
+  "txnType": "STANDARD",
   "categoryId": 3,
-  "subcategoryId": 8
+  "subcategoryId": 8,
+  "transferGroupId": null
 }
 
 PATCH /txns/{id}
@@ -181,12 +192,19 @@ Response:
 }
 
 
-## Import (CSV/OFX) — MVP
+## Import (CSV) — MVP
 POST /import/csv (multipart)
-POST /import/ofx (multipart)
+CSV esperado (colunas obrigatórias): date, description, amount
+CSV opcionais: account, category
 GET /import/batches
 GET /import/batches/{id}
 
+## Alerts (in-app)
+GET /alerts
+PATCH /alerts/{id}
+Request:
+{ "isRead": true }
+
 ## Changelog
-- Adicionei headers padrão e formato de erros (incluindo 401/403) para o contrato da API.
-- Incluí o endpoint opcional de refresh token e clarifiquei a proteção de endpoints via Authorization Bearer.
+- Atualizei payloads de contas/transações para saldo inicial, txnType, transferGroupId e auditoria.
+- Restrição do MVP para import CSV com colunas definidas e inclusão de endpoints de alertas in-app.
