@@ -39,7 +39,9 @@ Response:
 ## Institutions
 GET /institutions
 POST /institutions
-Request: { "name":"Nubank", "code":"NU" }
+Request: { "name":"Nubank", "type":"BANK" }
+PATCH /institutions/{id}
+DELETE /institutions/{id} (soft delete)
 
 
 ## Accounts
@@ -52,6 +54,18 @@ Request:
   "type": "CHECKING",
   "currency": "BRL",
   "initialBalanceCents": 0
+}
+
+Response (inclui saldo calculado):
+{
+  "id": 1,
+  "institutionId": 1,
+  "name": "Itaú PJ",
+  "type": "CHECKING",
+  "currency": "BRL",
+  "initialBalanceCents": 0,
+  "balanceCents": 1500,
+  "isActive": true
 }
 
 GET /accounts/{id}
@@ -74,50 +88,67 @@ DELETE /subcategories/{id}
 ## Transactions
 Notas:
 - Transferência é registrada como duas transações com o mesmo transferGroupId.
-- txnType: STANDARD, TRANSFER, CARD_PURCHASE, CARD_PAYMENT.
+- txnType: NORMAL, TRANSFER, CARD_PURCHASE, CARD_PAYMENT.
 - CARD_PURCHASE não afeta saldo; CARD_PAYMENT afeta saldo e pode quitar card_bill.
 
-GET /txns?month=YYYY-MM&accountId=&categoryId=&q=&direction=
+GET /txns?month=YYYY-MM&accountId=&categoryId=&q=&direction=&status=
 Response:
-{
-  "items": [
-    {
-      "id": 1,
-      "accountId": 10,
-      "occurredAt": "2026-01-27",
-      "description": "POSTO SHELL",
-      "amountCents": 25000,
-      "direction": "OUT",
-      "txnType": "STANDARD",
-      "categoryId": 3,
-      "subcategoryId": 8,
-      "categorizationMode": "RULE",
-      "ruleId": 4,
-      "transferGroupId": null
-    }
-  ],
-  "totals": { "inCents": 0, "outCents": 25000, "netCents": -25000 }
-}
+[
+  {
+    "id": 1,
+    "accountId": 10,
+    "occurredAt": "2026-01-27T10:15:30Z",
+    "description": "POSTO SHELL",
+    "amountCents": 25000,
+    "direction": "OUT",
+    "monthRef": "2026-01",
+    "status": "POSTED",
+    "txnType": "NORMAL",
+    "categoryId": 3,
+    "subcategoryId": 8,
+    "ruleId": 4,
+    "transferGroupId": null,
+    "isActive": true
+  }
+]
 
 POST /txns
 Request:
 {
   "accountId": 10,
-  "occurredAt": "2026-01-27",
+  "occurredAt": "2026-01-27T10:15:30Z",
   "description": "Posto Shell - gasolina",
   "amountCents": 25000,
   "direction": "OUT",
-  "txnType": "STANDARD",
+  "status": "POSTED",
   "categoryId": 3,
-  "subcategoryId": 8,
-  "transferGroupId": null
+  "subcategoryId": 8
 }
 
 PATCH /txns/{id}
 Request (exemplo):
-{ "categoryId": 3, "subcategoryId": 8, "categorizationMode": "MANUAL" }
+{
+  "accountId": 10,
+  "occurredAt": "2026-01-27T10:15:30Z",
+  "description": "Posto Shell - gasolina",
+  "amountCents": 25000,
+  "direction": "OUT",
+  "status": "POSTED",
+  "categoryId": 3,
+  "subcategoryId": 8
+}
 
 DELETE /txns/{id}
+
+POST /txns/transfer
+Request:
+{
+  "fromAccountId": 1,
+  "toAccountId": 2,
+  "amountCents": 1000,
+  "occurredAt": "2026-01-27T10:15:30Z",
+  "description": "Transferência entre contas"
+}
 
 
 ## Rules
