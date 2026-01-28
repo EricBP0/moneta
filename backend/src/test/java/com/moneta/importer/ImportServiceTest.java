@@ -20,20 +20,19 @@ import com.moneta.txn.TxnDirection;
 import com.moneta.txn.TxnRepository;
 import com.moneta.txn.TxnStatus;
 import com.moneta.txn.TxnType;
+import com.moneta.support.PostgresContainerTest;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
 @Transactional
-class ImportServiceTest {
+class ImportServiceTest extends PostgresContainerTest {
   @Autowired
   private ImportService importService;
 

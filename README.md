@@ -15,3 +15,19 @@ Built with:
 - **Database:** PostgreSQL
 
 This project targets multiple users with isolation by user_id via JWT (no multi-tenant sharing).
+
+## Local development
+
+### Postgres (local stack)
+```bash
+docker compose up -d postgres
+```
+
+### Backend tests (Testcontainers)
+The backend test suite runs against a real Postgres container via Testcontainers. Ensure Docker is running before
+executing:
+
+```bash
+cd backend
+mvn clean test
+```
