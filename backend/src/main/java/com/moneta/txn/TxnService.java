@@ -5,6 +5,7 @@ import com.moneta.account.AccountRepository;
 import com.moneta.auth.User;
 import com.moneta.auth.UserRepository;
 import com.moneta.category.CategoryRepository;
+import com.moneta.alert.AlertService;
 import com.moneta.txn.TxnDtos.TxnFilter;
 import com.moneta.txn.TxnDtos.TxnRequest;
 import java.time.format.DateTimeFormatter;
@@ -25,17 +26,20 @@ public class TxnService {
   private final UserRepository userRepository;
   private final AccountRepository accountRepository;
   private final CategoryRepository categoryRepository;
+  private final AlertService alertService;
 
   public TxnService(
     TxnRepository txnRepository,
     UserRepository userRepository,
     AccountRepository accountRepository,
-    CategoryRepository categoryRepository
+    CategoryRepository categoryRepository,
+    AlertService alertService
   ) {
     this.txnRepository = txnRepository;
     this.userRepository = userRepository;
     this.accountRepository = accountRepository;
     this.categoryRepository = categoryRepository;
+    this.alertService = alertService;
   }
 
   @Transactional
@@ -59,12 +63,11 @@ public class TxnService {
     txn.setCategoryId(request.categoryId());
     txn.setSubcategoryId(request.subcategoryId());
     txn.setRuleId(request.ruleId());
+    txn.setCategorizationMode(resolveCategorizationMode(request));
     txn.setImportBatchId(request.importBatchId());
-    txn.setImportRowId(request.importRowId());
-    txn.setCategorizationMode(
-      request.categorizationMode() == null ? TxnCategorizationMode.MANUAL : request.categorizationMode()
-    );
-    return txnRepository.save(txn);
+    Txn saved = txnRepository.save(txn);
+    alertService.evaluateBudgetsForTxn(saved);
+    return saved;
   }
 
   public List<Txn> list(Long userId, TxnFilter filter) {
@@ -121,14 +124,11 @@ public class TxnService {
     txn.setCategoryId(request.categoryId());
     txn.setSubcategoryId(request.subcategoryId());
     txn.setRuleId(request.ruleId());
+    txn.setCategorizationMode(resolveCategorizationMode(request));
     txn.setImportBatchId(request.importBatchId());
-    if (request.importRowId() != null) {
-      txn.setImportRowId(request.importRowId());
-    }
-    if (request.categorizationMode() != null) {
-      txn.setCategorizationMode(request.categorizationMode());
-    }
-    return txnRepository.save(txn);
+    Txn saved = txnRepository.save(txn);
+    alertService.evaluateBudgetsForTxn(saved);
+    return saved;
   }
 
   @Transactional
@@ -144,5 +144,16 @@ public class TxnService {
     }
     categoryRepository.findByIdAndUserId(categoryId, userId)
       .orElseThrow(() -> new IllegalArgumentException("categoria não encontrada"));
+  }
+
+  private TxnCategorizationMode resolveCategorizationMode(TxnRequest request) {
+    if (request.ruleId() != null) {
+      return TxnCategorizationMode.RULE;
+    }
+    if (request.categoryId() != null || request.subcategoryId() != null) {
+      return TxnCategorizationMode.MANUAL;
+    }
+    // When all categorization fields are null, clear the mode
+    return null;
   }
 }

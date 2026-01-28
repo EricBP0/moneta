@@ -69,6 +69,7 @@ public class TxnDtos {
     Long categoryId,
     Long subcategoryId,
     Long ruleId,
+    TxnCategorizationMode categorizationMode,
     Long importBatchId,
     Long importRowId,
     TxnCategorizationMode categorizationMode,

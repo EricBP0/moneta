@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.moneta.account.Account;
 import com.moneta.account.AccountRepository;
+import com.moneta.alert.AlertService;
 import com.moneta.auth.User;
 import com.moneta.auth.UserRepository;
 import com.moneta.category.CategoryRepository;
@@ -38,11 +39,14 @@ class TxnServiceTest {
   @Mock
   private CategoryRepository categoryRepository;
 
+  @Mock
+  private AlertService alertService;
+
   private TxnService txnService;
 
   @BeforeEach
   void setup() {
-    txnService = new TxnService(txnRepository, userRepository, accountRepository, categoryRepository);
+    txnService = new TxnService(txnRepository, userRepository, accountRepository, categoryRepository, alertService);
   }
 
   @Test
