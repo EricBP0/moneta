@@ -12,10 +12,16 @@ import com.moneta.common.MonthRefValidator;
 import com.moneta.dashboard.DashboardDtos.AlertSummary;
 import com.moneta.dashboard.DashboardDtos.BudgetStatus;
 import com.moneta.dashboard.DashboardDtos.CategorySpend;
+import com.moneta.dashboard.DashboardDtos.GoalSummary;
 import com.moneta.dashboard.DashboardDtos.MonthlyResponse;
+import com.moneta.goal.Goal;
+import com.moneta.goal.GoalContributionRepository;
+import com.moneta.goal.GoalProjectionCalculator;
+import com.moneta.goal.GoalRepository;
 import com.moneta.txn.TxnRepository;
 import com.moneta.txn.TxnRepository.CategoryExpenseProjection;
 import com.moneta.txn.TxnRepository.MonthlyTotalsProjection;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,19 +35,28 @@ public class DashboardService {
   private final BudgetRepository budgetRepository;
   private final BudgetCalculator budgetCalculator;
   private final AlertRepository alertRepository;
+  private final GoalRepository goalRepository;
+  private final GoalContributionRepository goalContributionRepository;
+  private final GoalProjectionCalculator goalProjectionCalculator;
 
   public DashboardService(
     TxnRepository txnRepository,
     CategoryRepository categoryRepository,
     BudgetRepository budgetRepository,
     BudgetCalculator budgetCalculator,
-    AlertRepository alertRepository
+    AlertRepository alertRepository,
+    GoalRepository goalRepository,
+    GoalContributionRepository goalContributionRepository,
+    GoalProjectionCalculator goalProjectionCalculator
   ) {
     this.txnRepository = txnRepository;
     this.categoryRepository = categoryRepository;
     this.budgetRepository = budgetRepository;
     this.budgetCalculator = budgetCalculator;
     this.alertRepository = alertRepository;
+    this.goalRepository = goalRepository;
+    this.goalContributionRepository = goalContributionRepository;
+    this.goalProjectionCalculator = goalProjectionCalculator;
   }
 
   public MonthlyResponse getMonthly(Long userId, String monthRef) {
@@ -100,6 +115,34 @@ public class DashboardService {
       ))
       .toList();
 
-    return new MonthlyResponse(monthRef, income, expense, net, byCategory, budgetStatuses, alertSummaries);
+    YearMonth asOfMonth = YearMonth.parse(monthRef);
+    List<Goal> goals = goalRepository.findAllByUserId(userId);
+    List<GoalSummary> goalSummaries = goals.stream()
+      .map(goal -> buildGoalSummary(userId, goal, asOfMonth))
+      .toList();
+
+    return new MonthlyResponse(monthRef, income, expense, net, byCategory, budgetStatuses, alertSummaries, goalSummaries);
+  }
+
+  private GoalSummary buildGoalSummary(Long userId, Goal goal, YearMonth asOfMonth) {
+    long savedSoFar = goalContributionRepository.sumByGoalIdUpTo(
+      userId,
+      goal.getId(),
+      goalProjectionCalculator.endOfMonth(asOfMonth)
+    );
+    var projection = goalProjectionCalculator.calculate(goal, savedSoFar, asOfMonth);
+    double percent = goal.getTargetAmountCents() == 0
+      ? 0.0
+      : (double) savedSoFar / (double) goal.getTargetAmountCents();
+    return new GoalSummary(
+      goal.getId(),
+      goal.getName(),
+      savedSoFar,
+      goal.getTargetAmountCents(),
+      percent,
+      projection.neededMonthlyCents(),
+      goal.getTargetDate().toString(),
+      goal.getStatus().name()
+    );
   }
 }

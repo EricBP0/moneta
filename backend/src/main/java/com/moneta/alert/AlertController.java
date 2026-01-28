@@ -48,7 +48,9 @@ public class AlertController {
       alert.getType(),
       alert.getMessage(),
       alert.isRead(),
-      alert.getTriggeredAt()
+      alert.getTriggeredAt(),
+      alert.getBudgetId(),
+      alert.getGoalId()
     );
   }
 }

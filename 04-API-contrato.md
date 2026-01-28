@@ -197,18 +197,46 @@ GET /goals
 POST /goals
 Request:
 {
-  "name": "Casamento/Reforma",
-  "goalType": "WEDDING_REFORM",
-  "targetCents": 3000000,
+  "name": "Reserva de emergência",
+  "targetAmountCents": 3000000,
+  "targetDate": "2027-07",
   "startDate": "2026-02-01",
-  "targetDate": "2027-07-01",
-  "monthlyContribCents": 100000
+  "monthlyRateBps": 0
 }
+
+Response:
+{
+  "id": 1,
+  "name": "Reserva de emergência",
+  "targetAmountCents": 3000000,
+  "startDate": "2026-02-01",
+  "targetDate": "2027-07",
+  "monthlyRateBps": 0,
+  "status": "ACTIVE",
+  "savedSoFarCents": 0
+}
+
+GET /goals/{id}
+PATCH /goals/{id}
+DELETE /goals/{id} (cancela via status)
 
 GET /goals/{id}/contributions
 POST /goals/{id}/contributions
 Request:
 { "contributedAt":"2026-02-10", "amountCents": 100000, "note":"aporte mês" }
+
+GET /goals/{id}/projection?asOf=YYYY-MM
+Response:
+{
+  "savedSoFarCents": 400000,
+  "targetAmountCents": 3000000,
+  "monthsRemaining": 18,
+  "neededMonthlyCents": 144444,
+  "estimatedCompletionMonth": "2027-07",
+  "schedule": [
+    { "month": "2026-02", "savedProjectedCents": 544444, "neededMonthlyCents": 144444 }
+  ]
+}
 
 
 ## Dashboard
@@ -216,11 +244,57 @@ GET /dashboard/monthly?month=YYYY-MM
 Response:
 {
   "month": "2026-02",
-  "totals": { "inCents": 0, "outCents": 0, "netCents": 0 },
-  "byCategory": [ { "categoryId": 1, "outCents": 123000 } ],
-  "budgetStatus": [ { "categoryId": 1, "limitCents": 200000, "outCents": 123000, "pct": 0.615 } ],
-  "alerts": [ { "type":"BUDGET_80", "message":"..." } ]
+  "incomeCents": 0,
+  "expenseCents": 0,
+  "netCents": 0,
+  "byCategory": [ { "categoryId": 1, "categoryName": "Mercado", "expenseCents": 123000 } ],
+  "budgetStatus": [
+    {
+      "budgetId": 10,
+      "categoryId": 1,
+      "subcategoryId": null,
+      "limitCents": 200000,
+      "consumptionCents": 123000,
+      "percent": 0.615,
+      "triggered80": true,
+      "triggered100": false
+    }
+  ],
+  "alerts": [ { "type":"BUDGET_80", "message":"..." } ],
+  "goalsSummary": [
+    {
+      "goalId": 1,
+      "name": "Reserva de emergência",
+      "savedSoFarCents": 400000,
+      "targetAmountCents": 3000000,
+      "percent": 0.13,
+      "neededMonthlyCents": 144444,
+      "targetDate": "2027-07-01",
+      "status": "ACTIVE"
+    }
+  ]
 }
+
+## Exemplos cURL
+Criar meta:
+curl -X POST /api/goals \\
+  -H \"Authorization: Bearer <accessToken>\" \\
+  -H \"Content-Type: application/json\" \\
+  -d '{\"name\":\"Reserva\",\"targetAmountCents\":3000000,\"targetDate\":\"2027-07\",\"monthlyRateBps\":0}'
+
+Adicionar aporte:
+curl -X POST /api/goals/1/contributions \\
+  -H \"Authorization: Bearer <accessToken>\" \\
+  -H \"Content-Type: application/json\" \\
+  -d '{\"contributedAt\":\"2026-02-10\",\"amountCents\":100000,\"note\":\"aporte\"}'
+
+Projeção da meta:
+curl -X GET \"/api/goals/1/projection?asOf=2026-02\" \\
+  -H \"Authorization: Bearer <accessToken>\"
+
+Dashboard mensal:
+curl -X GET \"/api/dashboard/monthly?month=2026-02\" \\
+  -H \"Authorization: Bearer <accessToken>\"
 
 
 ## Import (CSV) — MVP

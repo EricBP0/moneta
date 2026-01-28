@@ -72,7 +72,6 @@ public class TxnDtos {
     TxnCategorizationMode categorizationMode,
     Long importBatchId,
     Long importRowId,
-    TxnCategorizationMode categorizationMode,
     UUID transferGroupId,
     boolean isActive
   ) {}

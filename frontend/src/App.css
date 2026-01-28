@@ -8,6 +8,23 @@ body {
   margin: 0;
 }
 
+.top-nav {
+  display: flex;
+  gap: 16px;
+  padding: 16px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.top-nav a {
+  color: #1f2933;
+  text-decoration: none;
+  font-weight: 600;
+}
+
 .page {
   max-width: 960px;
   margin: 0 auto;
@@ -16,6 +33,13 @@ body {
 
 header {
   margin-bottom: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
 }
 
 .card {
@@ -31,6 +55,12 @@ header {
   gap: 12px;
 }
 
+.form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 label {
   display: grid;
   gap: 6px;
@@ -44,12 +74,23 @@ button {
   padding: 8px 12px;
 }
 
-button {
+button,
+.button {
   background: #2563eb;
   color: #fff;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  padding: 8px 16px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button.secondary {
+  background: #e2e8f0;
+  color: #1f2933;
 }
 
 button:disabled {
@@ -110,12 +151,56 @@ button:disabled {
   padding: 12px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .pagination {
   display: flex;
   justify-content: space-between;
   margin-top: 16px;
+}
+
+.goal-list {
+  display: grid;
+  gap: 12px;
+}
+
+.goal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.goal-progress {
+  text-align: right;
+  display: grid;
+  gap: 4px;
+}
+
+.goal-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.goal-summary strong {
+  display: block;
+  font-size: 1.2rem;
+}
+
+.projection {
+  background: #eef2ff;
+  border-radius: 10px;
+  padding: 12px;
 }
 
 .muted {

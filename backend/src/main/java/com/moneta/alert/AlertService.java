@@ -4,9 +4,13 @@ import com.moneta.budget.Budget;
 import com.moneta.budget.BudgetCalculator;
 import com.moneta.budget.BudgetRepository;
 import com.moneta.common.MonthRefValidator;
+import com.moneta.goal.Goal;
+import com.moneta.goal.GoalProjectionCalculator;
+import com.moneta.goal.GoalStatus;
 import com.moneta.txn.Txn;
 import com.moneta.txn.TxnDirection;
 import com.moneta.txn.TxnStatus;
+import java.time.YearMonth;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -18,15 +22,18 @@ public class AlertService {
   private final AlertRepository alertRepository;
   private final BudgetRepository budgetRepository;
   private final BudgetCalculator budgetCalculator;
+  private final GoalProjectionCalculator goalProjectionCalculator;
 
   public AlertService(
     AlertRepository alertRepository,
     BudgetRepository budgetRepository,
-    BudgetCalculator budgetCalculator
+    BudgetCalculator budgetCalculator,
+    GoalProjectionCalculator goalProjectionCalculator
   ) {
     this.alertRepository = alertRepository;
     this.budgetRepository = budgetRepository;
     this.budgetCalculator = budgetCalculator;
+    this.goalProjectionCalculator = goalProjectionCalculator;
   }
 
   public List<Alert> list(Long userId, String monthRef) {
@@ -56,6 +63,22 @@ public class AlertService {
     double percent = budget.getLimitCents() == 0 ? 0.0 : (double) consumption / (double) budget.getLimitCents();
     createAlertIfNeeded(budget, percent, AlertType.BUDGET_80, 0.8);
     createAlertIfNeeded(budget, percent, AlertType.BUDGET_100, 1.0);
+  }
+
+  @Transactional
+  public void evaluateGoal(Goal goal, long savedSoFarCents, YearMonth asOfMonth) {
+    if (goal.getStatus() != GoalStatus.ACTIVE) {
+      return;
+    }
+    String monthRef = asOfMonth.toString();
+    if (savedSoFarCents >= goal.getTargetAmountCents()) {
+      createGoalAlertIfNeeded(goal, monthRef, AlertType.GOAL_REACHED, "Meta atingida");
+      return;
+    }
+    long expectedSaved = goalProjectionCalculator.calculateExpectedSaved(goal, asOfMonth);
+    if (savedSoFarCents < expectedSaved) {
+      createGoalAlertIfNeeded(goal, monthRef, AlertType.GOAL_BEHIND, "Meta está atrás do esperado");
+    }
   }
 
   @Transactional
@@ -99,6 +122,25 @@ public class AlertService {
     alert.setMonthRef(budget.getMonthRef());
     alert.setBudgetId(budget.getId());
     alert.setMessage(buildMessage(budget, type));
+    alert.setTriggeredAt(OffsetDateTime.now());
+    try {
+      alertRepository.save(alert);
+    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+      // Duplicate alert created by concurrent request; ignore
+    }
+  }
+
+  private void createGoalAlertIfNeeded(Goal goal, String monthRef, AlertType type, String message) {
+    Long userId = goal.getUser().getId();
+    if (alertRepository.existsByUserIdAndGoalIdAndMonthRefAndType(userId, goal.getId(), monthRef, type)) {
+      return;
+    }
+    Alert alert = new Alert();
+    alert.setUser(goal.getUser());
+    alert.setType(type);
+    alert.setMonthRef(monthRef);
+    alert.setGoalId(goal.getId());
+    alert.setMessage(String.format(Locale.ROOT, "%s: %s", goal.getName(), message));
     alert.setTriggeredAt(OffsetDateTime.now());
     try {
       alertRepository.save(alert);

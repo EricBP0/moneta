@@ -12,7 +12,8 @@ public class DashboardDtos {
     long netCents,
     List<CategorySpend> byCategory,
     List<BudgetStatus> budgetStatus,
-    List<AlertSummary> alerts
+    List<AlertSummary> alerts,
+    List<GoalSummary> goalsSummary
   ) {}
 
   public record CategorySpend(
@@ -38,5 +39,16 @@ public class DashboardDtos {
     String message,
     boolean isRead,
     OffsetDateTime triggeredAt
+  ) {}
+
+  public record GoalSummary(
+    Long goalId,
+    String name,
+    long savedSoFarCents,
+    long targetAmountCents,
+    double percent,
+    long neededMonthlyCents,
+    String targetDate,
+    String status
   ) {}
 }

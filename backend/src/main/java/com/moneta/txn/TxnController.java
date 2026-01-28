@@ -110,7 +110,6 @@ public class TxnController {
       txn.getCategorizationMode(),
       txn.getImportBatchId(),
       txn.getImportRowId(),
-      txn.getCategorizationMode(),
       txn.getTransferGroupId(),
       txn.isActive()
     );

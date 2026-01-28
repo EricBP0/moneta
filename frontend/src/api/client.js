@@ -35,6 +35,17 @@ export const apiClient = {
     });
     return handleResponse(response);
   },
+  async patch(path, body) {
+    const response = await fetch(path, {
+      method: 'PATCH',
+      headers: {
+        ...defaultHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    return handleResponse(response);
+  },
   async delete(path) {
     const response = await fetch(path, {
       method: 'DELETE',

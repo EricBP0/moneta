@@ -11,9 +11,15 @@ import com.moneta.budget.BudgetCalculator;
 import com.moneta.budget.BudgetRepository;
 import com.moneta.category.Category;
 import com.moneta.category.CategoryRepository;
+import com.moneta.goal.Goal;
+import com.moneta.goal.GoalContributionRepository;
+import com.moneta.goal.GoalProjectionCalculator;
+import com.moneta.goal.GoalRepository;
 import com.moneta.txn.TxnRepository;
 import com.moneta.txn.TxnRepository.CategoryExpenseProjection;
 import com.moneta.txn.TxnRepository.MonthlyTotalsProjection;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +44,15 @@ class DashboardServiceTest {
   @Mock
   private AlertRepository alertRepository;
 
+  @Mock
+  private GoalRepository goalRepository;
+
+  @Mock
+  private GoalContributionRepository goalContributionRepository;
+
+  @Mock
+  private GoalProjectionCalculator goalProjectionCalculator;
+
   private DashboardService dashboardService;
 
   @BeforeEach
@@ -47,7 +62,10 @@ class DashboardServiceTest {
       categoryRepository,
       budgetRepository,
       budgetCalculator,
-      alertRepository
+      alertRepository,
+      goalRepository,
+      goalContributionRepository,
+      goalProjectionCalculator
     );
   }
 
@@ -98,6 +116,25 @@ class DashboardServiceTest {
     alert80.setRead(false);
     when(alertRepository.findAllByUserIdAndMonthRef(1L, "2024-08")).thenReturn(List.of(alert80));
 
+    Goal goal = org.mockito.Mockito.mock(Goal.class);
+    when(goal.getId()).thenReturn(90L);
+    when(goal.getName()).thenReturn("Reserva");
+    when(goal.getTargetAmountCents()).thenReturn(10000L);
+    when(goal.getTargetDate()).thenReturn(LocalDate.of(2024, 12, 1));
+    when(goal.getStatus()).thenReturn(com.moneta.goal.GoalStatus.ACTIVE);
+    when(goalRepository.findAllByUserId(1L)).thenReturn(List.of(goal));
+    when(goalProjectionCalculator.endOfMonth(YearMonth.of(2024, 8))).thenReturn(LocalDate.of(2024, 8, 31));
+    when(goalContributionRepository.sumByGoalIdUpTo(1L, 90L, LocalDate.of(2024, 8, 31))).thenReturn(4000L);
+    when(goalProjectionCalculator.calculate(goal, 4000L, YearMonth.of(2024, 8)))
+      .thenReturn(new com.moneta.goal.GoalDtos.GoalProjectionResponse(
+        4000L,
+        10000L,
+        4,
+        1500L,
+        "2024-12",
+        List.of()
+      ));
+
     var response = dashboardService.getMonthly(1L, "2024-08");
 
     assertThat(response.incomeCents()).isEqualTo(10000L);
@@ -109,5 +146,6 @@ class DashboardServiceTest {
     assertThat(response.budgetStatus().get(0).triggered80()).isTrue();
     assertThat(response.budgetStatus().get(0).triggered100()).isFalse();
     assertThat(response.alerts()).hasSize(1);
+    assertThat(response.goalsSummary()).hasSize(1);
   }
 }
