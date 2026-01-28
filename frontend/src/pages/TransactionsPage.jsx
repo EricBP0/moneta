@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '../api/client.js';
 import { formatCents, monthToday, toIsoDateTime } from '../utils/format.js';
 import { useToast } from '../components/Toast.jsx';
@@ -53,16 +53,16 @@ const TransactionsPage = () => {
     return params.toString();
   }, [filters]);
 
-  const loadSupporting = async () => {
+  const loadSupporting = useCallback(async () => {
     const [accountsData, categoriesData] = await Promise.all([
       apiClient.get('/api/accounts'),
       apiClient.get('/api/categories')
     ]);
     setAccounts(accountsData);
     setCategories(categoriesData);
-  };
+  }, []);
 
-  const loadTxns = async () => {
+  const loadTxns = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -74,15 +74,15 @@ const TransactionsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterQuery, addToast]);
 
   useEffect(() => {
     loadSupporting();
-  }, []);
+  }, [loadSupporting]);
 
   useEffect(() => {
     loadTxns();
-  }, [filterQuery]);
+  }, [loadTxns]);
 
   const openCreate = () => {
     setEditing(null);
@@ -145,6 +145,11 @@ const TransactionsPage = () => {
 
   const submitTransfer = async (event) => {
     event.preventDefault();
+    // Validate that source and destination accounts are different
+    if (transferForm.fromAccountId === transferForm.toAccountId) {
+      addToast('As contas de origem e destino devem ser diferentes.', 'error');
+      return;
+    }
     try {
       const payload = {
         fromAccountId: Number(transferForm.fromAccountId),
@@ -287,9 +292,9 @@ const TransactionsPage = () => {
       </section>
 
       {isFormOpen && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h2>{editing ? 'Editar transação' : 'Nova transação'}</h2>
+        <div className="modal-overlay" onClick={() => setIsFormOpen(false)}>
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="txn-modal-title" onClick={(e) => e.stopPropagation()}>
+            <h2 id="txn-modal-title">{editing ? 'Editar transação' : 'Nova transação'}</h2>
             <form onSubmit={submitTxn} className="form">
               <label>
                 Conta
@@ -356,9 +361,9 @@ const TransactionsPage = () => {
       )}
 
       {transferOpen && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h2>Transferência</h2>
+        <div className="modal-overlay" onClick={() => setTransferOpen(false)}>
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="transfer-modal-title" onClick={(e) => e.stopPropagation()}>
+            <h2 id="transfer-modal-title">Transferência</h2>
             <form onSubmit={submitTransfer} className="form">
               <label>
                 Conta origem

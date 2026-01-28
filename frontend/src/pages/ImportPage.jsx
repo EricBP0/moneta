@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../api/client.js';
 import { useToast } from '../components/Toast.jsx';
 
@@ -30,20 +30,20 @@ const ImportPage = () => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const loadAccounts = async () => {
+  const loadAccounts = useCallback(async () => {
     const data = await apiClient.get('/api/accounts');
     setAccounts(data);
     if (!accountId && data.length > 0) {
       setAccountId(String(data[0].id));
     }
-  };
+  }, [accountId]);
 
-  const loadBatches = async () => {
+  const loadBatches = useCallback(async () => {
     const data = await apiClient.get('/api/import/batches');
     setBatches(data);
-  };
+  }, []);
 
-  const loadRows = async (batchId, status = statusFilter, currentPage = page) => {
+  const loadRows = useCallback(async (batchId, status = statusFilter, currentPage = page) => {
     if (!batchId) {
       return;
     }
@@ -55,7 +55,7 @@ const ImportPage = () => {
     const data = await apiClient.get(`/api/import/batches/${batchId}/rows?${query}`);
     setRows(data.rows || []);
     setRowTotals(data.totals || null);
-  };
+  }, [statusFilter, page, size]);
 
   const selectBatch = async (batch) => {
     setSelectedBatch(batch);
@@ -117,13 +117,13 @@ const ImportPage = () => {
   useEffect(() => {
     loadAccounts();
     loadBatches();
-  }, []);
+  }, [loadAccounts, loadBatches]);
 
   useEffect(() => {
     if (selectedBatch) {
       loadRows(selectedBatch.batchId, statusFilter, page);
     }
-  }, [statusFilter, page]);
+  }, [selectedBatch, statusFilter, page, loadRows]);
 
   return (
     <div className="page">
@@ -147,7 +147,16 @@ const ImportPage = () => {
           </label>
           <label>
             Arquivo CSV
-            <input type="file" accept=".csv" onChange={(event) => setFile(event.target.files[0])} />
+            <input
+              type="file"
+              accept=".csv"
+              onChange={(event) => {
+                const { files } = event.target;
+                if (files && files.length > 0) {
+                  setFile(files[0]);
+                }
+              }}
+            />
           </label>
           <button type="submit" disabled={loading}>Enviar</button>
         </form>

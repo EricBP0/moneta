@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../api/client.js';
 import { monthToday } from '../utils/format.js';
 import { useToast } from '../components/Toast.jsx';
@@ -10,7 +10,7 @@ const AlertsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadAlerts = async () => {
+  const loadAlerts = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -22,11 +22,11 @@ const AlertsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [month, addToast]);
 
   useEffect(() => {
     loadAlerts();
-  }, [month]);
+  }, [loadAlerts]);
 
   const markRead = async (alertId, isRead) => {
     try {

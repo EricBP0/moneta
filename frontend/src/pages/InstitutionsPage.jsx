@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../api/client.js';
 import { useToast } from '../components/Toast.jsx';
 
@@ -12,7 +12,7 @@ const InstitutionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadInstitutions = async () => {
+  const loadInstitutions = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -24,11 +24,11 @@ const InstitutionsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
     loadInstitutions();
-  }, []);
+  }, [loadInstitutions]);
 
   const submitForm = async (event) => {
     event.preventDefault();

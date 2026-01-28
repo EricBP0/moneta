@@ -4,6 +4,16 @@ const refreshTokenKey = 'refreshToken';
 const getAccessToken = () => localStorage.getItem(accessTokenKey);
 const getRefreshToken = () => localStorage.getItem(refreshTokenKey);
 
+/**
+ * Stores authentication tokens in localStorage.
+ * 
+ * Security Note: localStorage is vulnerable to XSS attacks. Tokens stored here can be
+ * accessed by any JavaScript code running in the same origin. Consider the following:
+ * - This is a common pattern for SPAs and is acceptable for many applications
+ * - For enhanced security, httpOnly cookies for refresh tokens are recommended if supported by backend
+ * - Ensure proper Content Security Policy (CSP) headers are in place
+ * - Keep tokens short-lived and implement proper refresh token rotation
+ */
 export const storeSession = (authResponse) => {
   if (!authResponse) {
     return;
@@ -60,6 +70,9 @@ const refreshSession = async () => {
   return data;
 };
 
+// Track ongoing refresh promise to prevent race conditions
+let refreshPromise = null;
+
 const request = async (method, path, body, options = {}) => {
   const config = {
     method,
@@ -69,7 +82,13 @@ const request = async (method, path, body, options = {}) => {
   const response = await fetch(path, config);
   if (response.status === 401 && !options.skipRefresh && !options._retry) {
     try {
-      await refreshSession();
+      // Reuse existing refresh promise if one is in flight
+      if (!refreshPromise) {
+        refreshPromise = refreshSession().finally(() => {
+          refreshPromise = null;
+        });
+      }
+      await refreshPromise;
       return request(method, path, body, { ...options, _retry: true });
     } catch (error) {
       clearSession();
