@@ -242,6 +242,10 @@ public class RuleService {
     }
     List<Txn> modifiedTxns = new ArrayList<>();
     for (Txn txn : txns) {
+      if (txn.getAccount() == null) {
+        // Cannot safely apply rules without an associated account
+        continue;
+      }
       Rule matchedRule = findFirstMatch(rules, txn);
       if (matchedRule == null) {
         continue;

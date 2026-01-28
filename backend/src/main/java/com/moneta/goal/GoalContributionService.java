@@ -71,7 +71,9 @@ public class GoalContributionService {
     contributionRepository.delete(contribution);
     YearMonth asOfMonth = YearMonth.from(contribution.getContributedAt());
     long savedSoFar = contributionRepository.sumByGoalIdUpTo(userId, goalId, projectionCalculator.endOfMonth(asOfMonth));
-    return projectionCalculator.calculate(contribution.getGoal(), savedSoFar, asOfMonth);
+    GoalProjectionResponse projection = projectionCalculator.calculate(contribution.getGoal(), savedSoFar, asOfMonth);
+    alertService.evaluateGoal(contribution.getGoal(), savedSoFar, asOfMonth);
+    return projection;
   }
 
   public Page<GoalContribution> listContributions(
