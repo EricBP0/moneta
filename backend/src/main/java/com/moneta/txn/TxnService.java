@@ -63,7 +63,7 @@ public class TxnService {
     txn.setCategoryId(request.categoryId());
     txn.setSubcategoryId(request.subcategoryId());
     txn.setRuleId(request.ruleId());
-    txn.setCategorizationMode(resolveCategorizationMode(request, null));
+    txn.setCategorizationMode(resolveCategorizationMode(request));
     txn.setImportBatchId(request.importBatchId());
     Txn saved = txnRepository.save(txn);
     alertService.evaluateBudgetsForTxn(saved);
@@ -124,7 +124,7 @@ public class TxnService {
     txn.setCategoryId(request.categoryId());
     txn.setSubcategoryId(request.subcategoryId());
     txn.setRuleId(request.ruleId());
-    txn.setCategorizationMode(resolveCategorizationMode(request, txn.getCategorizationMode()));
+    txn.setCategorizationMode(resolveCategorizationMode(request));
     txn.setImportBatchId(request.importBatchId());
     Txn saved = txnRepository.save(txn);
     alertService.evaluateBudgetsForTxn(saved);
@@ -146,14 +146,14 @@ public class TxnService {
       .orElseThrow(() -> new IllegalArgumentException("categoria não encontrada"));
   }
 
-  private TxnCategorizationMode resolveCategorizationMode(TxnRequest request, TxnCategorizationMode existing) {
+  private TxnCategorizationMode resolveCategorizationMode(TxnRequest request) {
     if (request.ruleId() != null) {
       return TxnCategorizationMode.RULE;
     }
     if (request.categoryId() != null || request.subcategoryId() != null) {
       return TxnCategorizationMode.MANUAL;
     }
-    // If the request explicitly clears categorization fields, return null
+    // When all categorization fields are null, clear the mode
     return null;
   }
 }
