@@ -8,27 +8,71 @@ body {
   margin: 0;
 }
 
-.top-nav {
-  display: flex;
-  gap: 16px;
-  padding: 16px 24px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+a {
+  color: inherit;
 }
 
-.top-nav a {
-  color: #1f2933;
+.app-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 24px 20px;
+}
+
+.sidebar-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.sidebar-header p {
+  margin: 4px 0 24px;
+}
+
+.sidebar-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.nav-link {
+  color: #cbd5f5;
   text-decoration: none;
-  font-weight: 600;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.nav-link.active,
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.content {
+  padding: 24px 32px 64px;
 }
 
 .page {
-  max-width: 960px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 32px 24px 64px;
 }
 
 header {
@@ -40,6 +84,15 @@ header {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .card {
@@ -48,6 +101,12 @@ header {
   padding: 20px;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
   margin-bottom: 24px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
 }
 
 .form {
@@ -61,7 +120,18 @@ header {
   align-items: center;
 }
 
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
 label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.inline-field {
   display: grid;
   gap: 6px;
   font-size: 0.9rem;
@@ -69,7 +139,8 @@ label {
 
 input,
 select,
-button {
+button,
+textarea {
   font-size: 1rem;
   padding: 8px 12px;
 }
@@ -86,11 +157,16 @@ button,
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
 }
 
 .button.secondary {
   background: #e2e8f0;
   color: #1f2933;
+}
+
+.button.danger {
+  background: #ef4444;
 }
 
 button:disabled {
@@ -156,6 +232,22 @@ button:disabled {
   gap: 12px;
 }
 
+.row-muted {
+  opacity: 0.7;
+}
+
+.row-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .pagination {
   display: flex;
   justify-content: space-between;
@@ -203,6 +295,147 @@ button:disabled {
   padding: 12px;
 }
 
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.modal {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  width: min(520px, 90vw);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+}
+
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: #e2e8f0;
+  color: #1f2933;
+}
+
+.chip.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.chip.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.chip.danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+.alert-dot {
+  width: 8px;
+  height: 8px;
+  background: #f97316;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: grid;
+  gap: 10px;
+  z-index: 30;
+}
+
+.toast {
+  background: #111827;
+  color: #f9fafb;
+  padding: 12px 16px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  justify-content: space-between;
+}
+
+.toast.success {
+  background: #16a34a;
+}
+
+.toast.error {
+  background: #dc2626;
+}
+
+.toast button {
+  background: transparent;
+  color: inherit;
+  border: none;
+  font-size: 1.2rem;
+  padding: 0;
+}
+
+.auth-layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.auth-card {
+  background: #fff;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
+  width: min(420px, 90vw);
+}
+
 .muted {
   color: #6b7280;
   font-size: 0.9rem;
@@ -216,4 +449,22 @@ button:disabled {
 .error {
   color: #b91c1c;
   margin-top: 4px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
 }
