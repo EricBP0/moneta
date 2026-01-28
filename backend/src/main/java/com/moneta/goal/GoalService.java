@@ -160,5 +160,8 @@ public class GoalService {
     if (targetDate.isBefore(startDate)) {
       throw new IllegalArgumentException("data alvo deve ser após data inicial");
     }
+    if (targetDate.equals(startDate)) {
+      throw new IllegalArgumentException("data alvo deve ser diferente da data inicial");
+    }
   }
 }

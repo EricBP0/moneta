@@ -62,8 +62,14 @@ class GoalServiceTest {
   void createStoresGoalForUser() {
     User user = new User();
     when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(user));
-    when(goalRepository.save(any(Goal.class))).thenAnswer(invocation -> invocation.getArgument(0));
-    when(contributionRepository.sumByGoalId(1L, null)).thenReturn(0L);
+    
+    // Mock the saved goal to return an ID
+    Goal mockSavedGoal = org.mockito.Mockito.mock(Goal.class, org.mockito.Answers.RETURNS_DEEP_STUBS);
+    when(mockSavedGoal.getId()).thenReturn(1L);
+    when(mockSavedGoal.getName()).thenReturn("Reserva");
+    
+    when(goalRepository.save(any(Goal.class))).thenReturn(mockSavedGoal);
+    when(contributionRepository.sumByGoalId(1L, 1L)).thenReturn(0L);
 
     GoalDtos.GoalRequest request = new GoalDtos.GoalRequest(
       "Reserva",

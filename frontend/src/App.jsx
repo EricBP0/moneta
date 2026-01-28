@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { apiClient } from './api/client.js';
 
@@ -242,7 +242,7 @@ const GoalsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadGoals = async () => {
+  const loadGoals = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -253,11 +253,11 @@ const GoalsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadGoals();
-  }, []);
+  }, [loadGoals]);
 
   return (
     <div className="page">
@@ -282,7 +282,7 @@ const GoalsPage = () => {
               </div>
               <div className="goal-progress">
                 <span>{formatCents(goal.savedSoFarCents)}</span>
-                <span className="muted">{Math.round((goal.savedSoFarCents / goal.targetAmountCents) * 100)}%</span>
+                <span className="muted">{goal.targetAmountCents ? Math.round((goal.savedSoFarCents / goal.targetAmountCents) * 100) : 0}%</span>
               </div>
             </Link>
           ))}
@@ -401,7 +401,7 @@ const GoalDetailPage = () => {
     note: ''
   });
 
-  const loadGoal = async () => {
+  const loadGoal = useCallback(async () => {
     setLoading(true);
     setMessage('');
     try {
@@ -416,11 +416,11 @@ const GoalDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadGoal();
-  }, [id]);
+  }, [loadGoal]);
 
   const handleContribution = async (event) => {
     event.preventDefault();
