@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificationExecutor<Txn> {
   Optional<Txn> findByIdAndUserIdAndIsActiveTrue(Long id, Long userId);
+  List<Txn> findByUserIdAndAccountIdAndIsActiveTrue(Long userId, Long accountId);
 
   @Query("""
     select t.account.id as accountId,

@@ -1,0 +1,134 @@
+:root {
+  font-family: "Inter", system-ui, sans-serif;
+  color: #1f2933;
+  background-color: #f5f7fa;
+}
+
+body {
+  margin: 0;
+}
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+header {
+  margin-bottom: 24px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  margin-bottom: 24px;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+input,
+select,
+button {
+  font-size: 1rem;
+  padding: 8px 12px;
+}
+
+button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.batch-list {
+  display: grid;
+  gap: 8px;
+}
+
+.batch {
+  text-align: left;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.batch.selected {
+  border-color: #2563eb;
+  background: #eef2ff;
+}
+
+.batch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tab {
+  background: #e2e8f0;
+  color: #1f2933;
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.tab.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+.rows {
+  display: grid;
+  gap: 10px;
+}
+
+.row {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.muted {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.message {
+  margin-top: 12px;
+  color: #2563eb;
+}
+
+.error {
+  color: #b91c1c;
+  margin-top: 4px;
+}

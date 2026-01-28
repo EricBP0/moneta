@@ -224,11 +224,34 @@ Response:
 
 
 ## Import (CSV) — MVP
-POST /import/csv (multipart)
-CSV esperado (colunas obrigatórias): date, description, amount, accountId
-CSV opcional: category (se não existir, marcar como UNCATEGORIZED)
-GET /import/batches
-GET /import/batches/{id}
+POST /api/import/csv (multipart/form-data)
+Campos:
+- file: CSV
+- accountId: uuid
+CSV obrigatório: date, description, amount
+CSV opcional: category, subcategory
+Regras:
+- date no formato YYYY-MM-DD
+- amount < 0 => OUT (amountCents = abs)
+- amount > 0 => IN
+- amount == 0 => linha inválida
+- category/subcategory resolvidas por nome (case-insensitive) no usuário; se não existir, mantém NULL
+
+Resposta:
+{ "batchId": 1, "filename": "extrato.csv", "totals": { ... }, "status": "PARSED" }
+
+GET /api/import/batches
+GET /api/import/batches/{id}
+GET /api/import/batches/{id}/rows?status=READY|ERROR|DUPLICATE&page=&size=
+POST /api/import/batches/{id}/commit
+Payload:
+{
+  "applyRulesAfterCommit": true,
+  "skipDuplicates": true,
+  "commitOnlyReady": true
+}
+DELETE /api/import/batches/{id}
+Regra: não permite delete de batch COMMITTED.
 
 ## Alerts (in-app)
 GET /alerts
@@ -238,4 +261,4 @@ Request:
 
 ## Changelog
 - Atualizei payloads de contas/transações para saldo inicial, txnType, transferGroupId e auditoria.
-- Restrição do MVP para import CSV com colunas definidas e inclusão de endpoints de alertas in-app.
+- Ampliei o contrato de import CSV com batches/rows, revisão, commit e dedupe por hash.

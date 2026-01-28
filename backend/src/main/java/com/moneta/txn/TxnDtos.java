@@ -16,7 +16,9 @@ public class TxnDtos {
     Long categoryId,
     Long subcategoryId,
     Long ruleId,
-    Long importBatchId
+    Long importBatchId,
+    Long importRowId,
+    TxnCategorizationMode categorizationMode
   ) {}
 
   public record TxnResponse(
@@ -33,6 +35,8 @@ public class TxnDtos {
     Long subcategoryId,
     Long ruleId,
     Long importBatchId,
+    Long importRowId,
+    TxnCategorizationMode categorizationMode,
     UUID transferGroupId,
     boolean isActive
   ) {}

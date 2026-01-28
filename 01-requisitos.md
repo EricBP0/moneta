@@ -77,14 +77,17 @@
 - Prioridade: P1
 
 ## RF-10 — Importação CSV (MVP)
-- Importar CSV com colunas obrigatórias: date, description, amount, accountId.
-- Coluna opcional: category (se não existir, marcar como UNCATEGORIZED).
-- amount pode ser positivo/negativo; converter para amountCents + direction.
-- Criar import_batch + import_row e aplicar dedupe simples por hash.
+- Importar CSV com colunas obrigatórias: date, description, amount (accountId no upload).
+- Colunas opcionais: category, subcategory (resolver por nome, sem criar automaticamente).
+- amount pode ser positivo/negativo; converter para amountCents + direction (zero é inválido).
+- Criar import_batch + import_row com status PARSED/READY/ERROR/DUPLICATE e totals.
+- Fluxo: upload -> review -> commit (gera txns com status POSTED).
+- Dedupe por hash contra txns existentes e rows da mesma batch.
 - Prioridade: P1
 
 ## RF-11 — Auditoria de categorização
-- Guardar categorizationMode, ruleId (quando aplicado) e importBatchId.
+- Guardar categorizationMode, ruleId (quando aplicado), importBatchId e importRowId opcional.
+- Não sobrescrever MANUAL automaticamente em regras/aplicações.
 - Manter timestamps relevantes (createdAt, categorizedAt quando houver).
 - Prioridade: P1
 
