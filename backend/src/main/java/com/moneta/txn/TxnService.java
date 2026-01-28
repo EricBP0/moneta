@@ -153,7 +153,7 @@ public class TxnService {
     if (request.categoryId() != null || request.subcategoryId() != null) {
       return TxnCategorizationMode.MANUAL;
     }
-    // Default to MANUAL when no categorization is provided (matching DB default)
-    return TxnCategorizationMode.MANUAL;
+    // Return null for uncategorized transactions so they can be distinguished from manual ones
+    return null;
   }
 }
