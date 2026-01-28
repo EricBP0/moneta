@@ -153,7 +153,7 @@ public class TxnService {
     if (request.categoryId() != null || request.subcategoryId() != null) {
       return TxnCategorizationMode.MANUAL;
     }
-    // When all categorization fields are null, clear the mode
-    return null;
+    // Default to MANUAL when no categorization is provided (matching DB default)
+    return TxnCategorizationMode.MANUAL;
   }
 }
