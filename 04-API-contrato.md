@@ -227,7 +227,7 @@ Response:
 POST /api/import/csv (multipart/form-data)
 Campos:
 - file: CSV
-- accountId: uuid
+- accountId: number (ID numérico da conta)
 CSV obrigatório: date, description, amount
 CSV opcional: category, subcategory
 Regras:
@@ -235,7 +235,7 @@ Regras:
 - amount < 0 => OUT (amountCents = abs)
 - amount > 0 => IN
 - amount == 0 => linha inválida
-- category/subcategory resolvidas por nome (case-insensitive) no usuário; se não existir, mantém NULL
+- category resolvida por nome (case-insensitive) no usuário; se não existir, mantém NULL; subcategory não é resolvida por nome na versão atual
 
 Resposta:
 { "batchId": 1, "filename": "extrato.csv", "totals": { ... }, "status": "PARSED" }

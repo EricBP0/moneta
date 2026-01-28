@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -189,6 +190,7 @@ public class ImportService {
     Set<String> existingHashes = buildExistingTxnHashes(userId, batch.getAccount().getId());
     int createdCount = 0;
     int duplicateCount = 0;
+    List<Txn> createdTxns = new ArrayList<>();
 
     for (ImportRow row : rowsToCommit) {
       if (row.getStatus() != ImportRowStatus.READY) {
@@ -215,17 +217,13 @@ public class ImportService {
       row.setUpdatedAt(OffsetDateTime.now());
       row.setHash(hash);
       createdCount++;
+      createdTxns.add(savedTxn);
       existingHashes.add(hash);
     }
 
     importRowRepository.saveAll(rowsToCommit);
 
-    if (applyRulesAfterCommit) {
-      List<Txn> createdTxns = rowsToCommit.stream()
-        .filter(row -> row.getCreatedTxnId() != null)
-        .map(row -> txnRepository.findById(row.getCreatedTxnId()).orElse(null))
-        .filter(Objects::nonNull)
-        .toList();
+    if (applyRulesAfterCommit && !createdTxns.isEmpty()) {
       List<Txn> updatedTxns = ruleService.applyRules(userId, createdTxns);
       for (Txn txn : updatedTxns) {
         if (txn.getCategorizationMode() != TxnCategorizationMode.MANUAL) {
@@ -272,7 +270,7 @@ public class ImportService {
   }
 
   private void updateTotals(ImportBatch batch, Long userId) {
-    int totalRows = importRowRepository.findByBatchIdAndUserId(batch.getId(), userId).size();
+    int totalRows = (int) importRowRepository.countByBatchIdAndUserId(batch.getId(), userId);
     int errorRows = (int) importRowRepository.countByBatchIdAndUserIdAndStatus(
       batch.getId(),
       userId,

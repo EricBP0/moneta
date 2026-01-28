@@ -18,6 +18,7 @@ public interface ImportRowRepository extends JpaRepository<ImportRow, Long> {
   List<ImportRow> findByBatchIdAndUserId(Long batchId, Long userId);
   List<ImportRow> findByBatchIdAndUserIdAndStatus(Long batchId, Long userId, ImportRowStatus status);
 
+  long countByBatchIdAndUserId(Long batchId, Long userId);
   long countByBatchIdAndUserIdAndStatus(Long batchId, Long userId, ImportRowStatus status);
   Optional<ImportRow> findByIdAndUserId(Long id, Long userId);
 }
