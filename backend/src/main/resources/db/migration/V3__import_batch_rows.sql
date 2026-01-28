@@ -35,7 +35,7 @@ CREATE TABLE import_row (
 );
 
 CREATE INDEX idx_import_rows_user_batch_status ON import_row (user_id, batch_id, status);
-CREATE UNIQUE INDEX idx_import_rows_user_hash ON import_row (user_id, hash);
+CREATE UNIQUE INDEX idx_import_rows_user_batch_hash ON import_row (user_id, batch_id, hash);
 
 ALTER TABLE txn
   ADD COLUMN import_row_id BIGINT REFERENCES import_row(id) ON DELETE SET NULL,

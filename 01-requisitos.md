@@ -78,7 +78,7 @@
 
 ## RF-10 — Importação CSV (MVP)
 - Importar CSV com colunas obrigatórias: date, description, amount (accountId no upload).
-- Colunas opcionais: category, subcategory (resolver por nome, sem criar automaticamente).
+- Colunas opcionais: category (resolver por nome, sem criar automaticamente); subcategory não é resolvida por nome na versão atual.
 - amount pode ser positivo/negativo; converter para amountCents + direction (zero é inválido).
 - Criar import_batch + import_row com status PARSED/READY/ERROR/DUPLICATE e totals.
 - Fluxo: upload -> review -> commit (gera txns com status POSTED).

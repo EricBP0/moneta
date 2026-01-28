@@ -25,6 +25,9 @@ export const apiClient = {
   },
   async post(path, body, options = {}) {
     const headers = { ...defaultHeaders(), ...options.headers };
+    if (!options.isForm) {
+      headers['Content-Type'] = 'application/json';
+    }
     const response = await fetch(path, {
       method: 'POST',
       headers,
