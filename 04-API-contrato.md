@@ -89,7 +89,7 @@ DELETE /subcategories/{id}
 Notas:
 - Transferência é registrada como duas transações com o mesmo transferGroupId.
 - txnType: NORMAL, TRANSFER, CARD_PURCHASE, CARD_PAYMENT.
-- CARD_PURCHASE não afeta saldo; CARD_PAYMENT afeta saldo e pode quitar card_bill.
+- Todos os txns com status POSTED afetam saldo (incluindo CARD_PURCHASE); CARD_PAYMENT afeta saldo e pode quitar card_bill.
 
 GET /txns?month=YYYY-MM&accountId=&categoryId=&q=&direction=&status=
 Response:

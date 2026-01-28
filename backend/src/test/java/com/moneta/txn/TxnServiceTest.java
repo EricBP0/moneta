@@ -112,4 +112,31 @@ class TxnServiceTest {
 
     verify(txnRepository).findAll(any(Specification.class), eq(Sort.by(Sort.Direction.DESC, "occurredAt")));
   }
+
+  @Test
+  void updatePreservesStatusWhenNull() {
+    Txn existing = new Txn();
+    existing.setStatus(TxnStatus.PENDING);
+    when(txnRepository.findByIdAndUserIdAndIsActiveTrue(5L, 1L)).thenReturn(Optional.of(existing));
+    when(accountRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.of(new Account()));
+    when(txnRepository.save(any(Txn.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    OffsetDateTime occurredAt = OffsetDateTime.parse("2024-08-15T10:15:30Z");
+    TxnRequest request = new TxnRequest(
+      10L,
+      300L,
+      TxnDirection.IN,
+      "Salário",
+      occurredAt,
+      null,
+      null,
+      null,
+      null,
+      null
+    );
+
+    Txn updated = txnService.update(1L, 5L, request);
+
+    assertThat(updated.getStatus()).isEqualTo(TxnStatus.PENDING);
+  }
 }
