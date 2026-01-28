@@ -9,7 +9,9 @@ public class AlertDtos {
     AlertType type,
     String message,
     boolean isRead,
-    OffsetDateTime triggeredAt
+    OffsetDateTime triggeredAt,
+    Long budgetId,
+    Long goalId
   ) {}
 
   public record AlertUpdateRequest(

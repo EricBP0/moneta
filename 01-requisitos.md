@@ -60,11 +60,11 @@
 - Prioridade: P1
 
 ## RF-07 — Metas (Goals) e Projeção até 07/2027
-- Criar metas: Emergência, Casamento/Reforma
-- Registrar aportes (manual)
-- Projeção mensal com aporte planejado
-- Simulação simples com juros default 0 (editável depois)
-- Prioridade: P2
+- Criar metas com nome, valor alvo, data alvo e taxa mensal (bps).
+- Registrar aportes (manual) vinculados à meta.
+- Projeção mensal com aporte necessário (com juros compostos mensais opcionais).
+- Progresso baseado na soma de aportes.
+- Prioridade: P1
 
 ## RF-08 — Dashboard mensal
 - Resumo do mês:
@@ -97,8 +97,10 @@
 - Prioridade: P1
 
 ## RF-13 — Alertas (MVP)
-- Alertas no MVP apenas para orçamento (80% e 100% do teto).
-- Alertas de meta ficam como P2.
+- Alertas de orçamento (80% e 100% do teto).
+- Alertas de meta:
+  - Meta atingida.
+  - Meta atrás do esperado (ritmo linear).
 - Prioridade: P1
 
 

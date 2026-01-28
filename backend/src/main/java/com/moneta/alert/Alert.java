@@ -32,8 +32,11 @@ public class Alert {
   @Column(name = "month_ref", nullable = false)
   private String monthRef;
 
-  @Column(name = "budget_id", nullable = false)
+  @Column(name = "budget_id")
   private Long budgetId;
+
+  @Column(name = "goal_id")
+  private Long goalId;
 
   @Column(nullable = false)
   private String message;
@@ -81,6 +84,14 @@ public class Alert {
 
   public void setBudgetId(Long budgetId) {
     this.budgetId = budgetId;
+  }
+
+  public Long getGoalId() {
+    return goalId;
+  }
+
+  public void setGoalId(Long goalId) {
+    this.goalId = goalId;
   }
 
   public String getMessage() {

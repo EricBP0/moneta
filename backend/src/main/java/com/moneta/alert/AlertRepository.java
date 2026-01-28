@@ -12,4 +12,6 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
   Optional<Alert> findByIdAndUserId(Long id, Long userId);
 
   boolean existsByUserIdAndBudgetIdAndMonthRefAndType(Long userId, Long budgetId, String monthRef, AlertType type);
+
+  boolean existsByUserIdAndGoalIdAndMonthRefAndType(Long userId, Long goalId, String monthRef, AlertType type);
 }

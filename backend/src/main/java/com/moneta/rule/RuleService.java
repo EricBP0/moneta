@@ -15,6 +15,7 @@ import com.moneta.txn.TxnCategorizationMode;
 import com.moneta.txn.TxnRepository;
 import com.moneta.txn.TxnStatus;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -23,8 +24,6 @@ import java.util.regex.PatternSyntaxException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.Collections;
-
 @Service
 public class RuleService {
   private final RuleRepository ruleRepository;
@@ -230,8 +229,36 @@ public class RuleService {
     } catch (PatternSyntaxException ex) {
       throw new IllegalArgumentException("regex inválido");
     }
-    
-  public List<Txn> applyRules(Long userId, List<Txn> txns) {
-    return Collections.emptyList();
   }
 
+  @Transactional
+  public List<Txn> applyRules(Long userId, List<Txn> txns) {
+    if (txns == null || txns.isEmpty()) {
+      return Collections.emptyList();
+    }
+    List<Rule> rules = ruleRepository.findAllByUserIdAndIsActiveTrueOrderByPriorityAsc(userId);
+    if (rules.isEmpty()) {
+      return Collections.emptyList();
+    }
+    List<Txn> modifiedTxns = new ArrayList<>();
+    for (Txn txn : txns) {
+      Rule matchedRule = findFirstMatch(rules, txn);
+      if (matchedRule == null) {
+        continue;
+      }
+      if (matchedRule.getCategoryId() != null) {
+        txn.setCategoryId(matchedRule.getCategoryId());
+      }
+      if (matchedRule.getSubcategoryId() != null) {
+        txn.setSubcategoryId(matchedRule.getSubcategoryId());
+      }
+      txn.setRuleId(matchedRule.getId());
+      txn.setCategorizationMode(TxnCategorizationMode.RULE);
+      modifiedTxns.add(txn);
+    }
+    if (modifiedTxns.isEmpty()) {
+      return Collections.emptyList();
+    }
+    return txnRepository.saveAll(modifiedTxns);
+  }
+}

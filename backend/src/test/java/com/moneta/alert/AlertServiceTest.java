@@ -2,7 +2,6 @@ package com.moneta.alert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -12,6 +11,10 @@ import com.moneta.auth.User;
 import com.moneta.budget.Budget;
 import com.moneta.budget.BudgetCalculator;
 import com.moneta.budget.BudgetRepository;
+import com.moneta.goal.Goal;
+import com.moneta.goal.GoalProjectionCalculator;
+import com.moneta.goal.GoalStatus;
+import java.time.YearMonth;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,11 +33,14 @@ class AlertServiceTest {
   @Mock
   private BudgetCalculator budgetCalculator;
 
+  @Mock
+  private GoalProjectionCalculator goalProjectionCalculator;
+
   private AlertService alertService;
 
   @BeforeEach
   void setup() {
-    alertService = new AlertService(alertRepository, budgetRepository, budgetCalculator);
+    alertService = new AlertService(alertRepository, budgetRepository, budgetCalculator, goalProjectionCalculator);
   }
 
   @Test
@@ -84,5 +90,38 @@ class AlertServiceTest {
     Alert updated = alertService.markRead(1L, 10L, true);
 
     assertThat(updated.isRead()).isTrue();
+  }
+
+  @Test
+  void evaluateGoalCreatesReachedAlert() {
+    Goal goal = new Goal();
+    User user = org.mockito.Mockito.mock(User.class);
+    when(user.getId()).thenReturn(1L);
+    goal.setUser(user);
+    goal.setName("Reserva");
+    goal.setTargetAmountCents(1000L);
+    goal.setStatus(GoalStatus.ACTIVE);
+
+    alertService.evaluateGoal(goal, 1200L, YearMonth.of(2024, 8));
+
+    verify(alertRepository, times(1)).save(any(Alert.class));
+  }
+
+  @Test
+  void evaluateGoalCreatesBehindAlert() {
+    Goal goal = new Goal();
+    User user = org.mockito.Mockito.mock(User.class);
+    when(user.getId()).thenReturn(1L);
+    goal.setUser(user);
+    goal.setName("Reserva");
+    goal.setTargetAmountCents(1000L);
+    goal.setStatus(GoalStatus.ACTIVE);
+    when(goalProjectionCalculator.calculateExpectedSaved(goal, YearMonth.of(2024, 8))).thenReturn(800L);
+    when(alertRepository.existsByUserIdAndGoalIdAndMonthRefAndType(1L, goal.getId(), "2024-08", AlertType.GOAL_BEHIND))
+      .thenReturn(false);
+
+    alertService.evaluateGoal(goal, 200L, YearMonth.of(2024, 8));
+
+    verify(alertRepository, times(1)).save(any(Alert.class));
   }
 }
