@@ -64,6 +64,10 @@ public class Txn {
   @Column(name = "rule_id")
   private Long ruleId;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "categorization_mode")
+  private TxnCategorizationMode categorizationMode;
+
   @Column(name = "import_batch_id")
   private Long importBatchId;
 
@@ -174,6 +178,14 @@ public class Txn {
 
   public void setRuleId(Long ruleId) {
     this.ruleId = ruleId;
+  }
+
+  public TxnCategorizationMode getCategorizationMode() {
+    return categorizationMode;
+  }
+
+  public void setCategorizationMode(TxnCategorizationMode categorizationMode) {
+    this.categorizationMode = categorizationMode;
   }
 
   public Long getImportBatchId() {

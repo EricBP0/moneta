@@ -36,8 +36,70 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     @Param("accountId") Long accountId
   );
 
+  @Query("""
+    select coalesce(sum(t.amountCents), 0)
+    from Txn t
+    where t.user.id = :userId
+      and t.monthRef = :monthRef
+      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.direction = com.moneta.txn.TxnDirection.OUT
+      and t.isActive = true
+      and (:categoryId is null or t.categoryId = :categoryId)
+      and (:subcategoryId is null or t.subcategoryId = :subcategoryId)
+  """)
+  Long sumPostedOutByUserAndMonthAndCategory(
+    @Param("userId") Long userId,
+    @Param("monthRef") String monthRef,
+    @Param("categoryId") Long categoryId,
+    @Param("subcategoryId") Long subcategoryId
+  );
+
+  @Query("""
+    select
+      coalesce(sum(case when t.direction = com.moneta.txn.TxnDirection.IN then t.amountCents else 0 end), 0)
+        as incomeCents,
+      coalesce(sum(case when t.direction = com.moneta.txn.TxnDirection.OUT then t.amountCents else 0 end), 0)
+        as expenseCents
+    from Txn t
+    where t.user.id = :userId
+      and t.monthRef = :monthRef
+      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.isActive = true
+  """)
+  MonthlyTotalsProjection findMonthlyTotals(
+    @Param("userId") Long userId,
+    @Param("monthRef") String monthRef
+  );
+
+  @Query("""
+    select t.categoryId as categoryId,
+      coalesce(sum(t.amountCents), 0) as expenseCents
+    from Txn t
+    where t.user.id = :userId
+      and t.monthRef = :monthRef
+      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.direction = com.moneta.txn.TxnDirection.OUT
+      and t.isActive = true
+      and t.categoryId is not null
+    group by t.categoryId
+  """)
+  List<CategoryExpenseProjection> findCategoryExpenses(
+    @Param("userId") Long userId,
+    @Param("monthRef") String monthRef
+  );
+
   interface TxnBalanceProjection {
     Long getAccountId();
     Long getBalanceCents();
+  }
+
+  interface MonthlyTotalsProjection {
+    Long getIncomeCents();
+    Long getExpenseCents();
+  }
+
+  interface CategoryExpenseProjection {
+    Long getCategoryId();
+    Long getExpenseCents();
   }
 }

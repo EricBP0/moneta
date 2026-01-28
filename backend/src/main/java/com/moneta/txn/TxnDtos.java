@@ -32,6 +32,7 @@ public class TxnDtos {
     Long categoryId,
     Long subcategoryId,
     Long ruleId,
+    TxnCategorizationMode categorizationMode,
     Long importBatchId,
     UUID transferGroupId,
     boolean isActive
