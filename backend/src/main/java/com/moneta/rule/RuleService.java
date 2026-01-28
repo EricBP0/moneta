@@ -23,6 +23,7 @@ import java.util.regex.PatternSyntaxException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Collections;
 
 @Service
 public class RuleService {
@@ -229,5 +230,8 @@ public class RuleService {
     } catch (PatternSyntaxException ex) {
       throw new IllegalArgumentException("regex inválido");
     }
+    
+  public List<Txn> applyRules(Long userId, List<Txn> txns) {
+    return Collections.emptyList();
   }
-}
+

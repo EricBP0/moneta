@@ -109,6 +109,8 @@ public class TxnController {
       txn.getRuleId(),
       txn.getCategorizationMode(),
       txn.getImportBatchId(),
+      txn.getImportRowId(),
+      txn.getCategorizationMode(),
       txn.getTransferGroupId(),
       txn.isActive()
     );

@@ -16,8 +16,45 @@ public class TxnDtos {
     Long categoryId,
     Long subcategoryId,
     Long ruleId,
-    Long importBatchId
-  ) {}
+    Long importBatchId,
+    Long importRowId,
+    TxnCategorizationMode categorizationMode
+  ) {
+    /**
+     * Backward-compatible constructor matching the previous TxnRequest arity
+     * (before importRowId and categorizationMode were added).
+     * <p>
+     * Existing call sites that do not supply importRowId or categorizationMode
+     * will use this constructor, which defaults those fields to null.
+     */
+    public TxnRequest(
+      Long accountId,
+      Long amountCents,
+      TxnDirection direction,
+      String description,
+      OffsetDateTime occurredAt,
+      TxnStatus status,
+      Long categoryId,
+      Long subcategoryId,
+      Long ruleId,
+      Long importBatchId
+    ) {
+      this(
+        accountId,
+        amountCents,
+        direction,
+        description,
+        occurredAt,
+        status,
+        categoryId,
+        subcategoryId,
+        ruleId,
+        importBatchId,
+        null,
+        null
+      );
+    }
+  }
 
   public record TxnResponse(
     Long id,
@@ -34,6 +71,8 @@ public class TxnDtos {
     Long ruleId,
     TxnCategorizationMode categorizationMode,
     Long importBatchId,
+    Long importRowId,
+    TxnCategorizationMode categorizationMode,
     UUID transferGroupId,
     boolean isActive
   ) {}

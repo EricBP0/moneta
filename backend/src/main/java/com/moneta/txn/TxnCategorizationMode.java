@@ -1,6 +1,8 @@
 package com.moneta.txn;
 
 public enum TxnCategorizationMode {
-  MANUAL,
-  RULE
+  IMPORT,
+  IMPORT_SUGGESTION,
+  RULE,
+  MANUAL
 }
