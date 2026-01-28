@@ -153,7 +153,7 @@ public class TxnService {
     if (request.categoryId() != null || request.subcategoryId() != null) {
       return TxnCategorizationMode.MANUAL;
     }
-    // When all categorization fields are null, clear the mode
+    // Return null for uncategorized transactions so they can be distinguished from manual ones
     return null;
   }
 }

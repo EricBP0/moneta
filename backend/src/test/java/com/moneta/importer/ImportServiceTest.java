@@ -20,20 +20,19 @@ import com.moneta.txn.TxnDirection;
 import com.moneta.txn.TxnRepository;
 import com.moneta.txn.TxnStatus;
 import com.moneta.txn.TxnType;
+import com.moneta.support.PostgresContainerTest;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
 @Transactional
-class ImportServiceTest {
+class ImportServiceTest extends PostgresContainerTest {
   @Autowired
   private ImportService importService;
 
@@ -127,6 +126,12 @@ class ImportServiceTest {
     User user = createUser();
     Account account = createAccount(user);
 
+    Category category = new Category();
+    category.setUser(user);
+    category.setName("Groceries");
+    category = categoryRepository.save(category);
+    final Long categoryId = category.getId();
+
     String csv = "date,description,amount\n" +
       "2024-03-01,Supermercado,150.00";
 
@@ -142,7 +147,7 @@ class ImportServiceTest {
     when(ruleService.applyRules(eq(user.getId()), any(List.class)))
       .thenAnswer(invocation -> {
         List<Txn> txns = invocation.getArgument(1);
-        txns.forEach(txn -> txn.setCategoryId(999L));
+        txns.forEach(txn -> txn.setCategoryId(categoryId));
         return txns;
       });
 
@@ -151,7 +156,7 @@ class ImportServiceTest {
     Txn saved = txnRepository.findByUserIdAndAccountIdAndIsActiveTrue(user.getId(), account.getId())
       .get(0);
     assertThat(saved.getCategorizationMode()).isEqualTo(TxnCategorizationMode.RULE);
-    assertThat(saved.getCategoryId()).isEqualTo(999L);
+    assertThat(saved.getCategoryId()).isEqualTo(categoryId);
   }
 
   @Test

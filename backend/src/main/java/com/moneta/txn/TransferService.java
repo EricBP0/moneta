@@ -80,6 +80,7 @@ public class TransferService {
     txn.setStatus(TxnStatus.POSTED);
     txn.setTxnType(TxnType.TRANSFER);
     txn.setTransferGroupId(transferGroupId);
+    txn.setCategorizationMode(TxnCategorizationMode.MANUAL);
     return txn;
   }
 }
