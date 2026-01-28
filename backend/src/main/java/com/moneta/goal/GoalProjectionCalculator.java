@@ -60,7 +60,7 @@ public class GoalProjectionCalculator {
     YearMonth targetMonth = YearMonth.from(goal.getTargetDate());
     long totalMonths = monthsBetween(startMonth, targetMonth) + 1;
     if (totalMonths <= 0) {
-      // Start date equals or is after target date - cannot calculate expected savings
+      // Defensive check for invalid date range (should be prevented by GoalService.validateDates)
       return 0L;
     }
     if (asOfMonth.isBefore(startMonth)) {
