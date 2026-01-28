@@ -8,3 +8,8 @@ spring:
   test:
     database:
       replace: none
+app:
+  jwt:
+    secret: test-secret-for-jwt-tokens
+    access-token-ttl-minutes: 60
+    refresh-token-ttl-days: 30

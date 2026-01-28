@@ -126,6 +126,12 @@ class ImportServiceTest extends PostgresContainerTest {
     User user = createUser();
     Account account = createAccount(user);
 
+    Category category = new Category();
+    category.setUser(user);
+    category.setName("Groceries");
+    category = categoryRepository.save(category);
+    final Long categoryId = category.getId();
+
     String csv = "date,description,amount\n" +
       "2024-03-01,Supermercado,150.00";
 
@@ -141,7 +147,7 @@ class ImportServiceTest extends PostgresContainerTest {
     when(ruleService.applyRules(eq(user.getId()), any(List.class)))
       .thenAnswer(invocation -> {
         List<Txn> txns = invocation.getArgument(1);
-        txns.forEach(txn -> txn.setCategoryId(999L));
+        txns.forEach(txn -> txn.setCategoryId(categoryId));
         return txns;
       });
 
@@ -150,7 +156,7 @@ class ImportServiceTest extends PostgresContainerTest {
     Txn saved = txnRepository.findByUserIdAndAccountIdAndIsActiveTrue(user.getId(), account.getId())
       .get(0);
     assertThat(saved.getCategorizationMode()).isEqualTo(TxnCategorizationMode.RULE);
-    assertThat(saved.getCategoryId()).isEqualTo(999L);
+    assertThat(saved.getCategoryId()).isEqualTo(categoryId);
   }
 
   @Test
