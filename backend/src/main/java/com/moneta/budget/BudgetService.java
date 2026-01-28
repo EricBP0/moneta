@@ -93,6 +93,9 @@ public class BudgetService {
     if (categoryId == null && subcategoryId == null) {
       throw new IllegalArgumentException("categoria ou subcategoria é obrigatória");
     }
+    if (categoryId != null && subcategoryId != null) {
+      throw new IllegalArgumentException("orçamento deve ser para categoria ou subcategoria, não ambos");
+    }
   }
 
   private void validateCategory(Long userId, Long categoryId) {

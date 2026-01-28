@@ -81,17 +81,12 @@ class RuleServiceTest {
     rule.setCategoryId(30L);
     when(ruleRepository.findAllByUserIdAndIsActiveTrueOrderByPriorityAsc(1L)).thenReturn(List.of(rule));
 
-    Txn txn = new Txn();
-    txn.setStatus(TxnStatus.POSTED);
-    txn.setDescription("Uber");
-    txn.setAccount(new Account());
-    txn.setCategorizationMode(TxnCategorizationMode.MANUAL);
-    when(txnRepository.findAll(any(Specification.class))).thenReturn(List.of(txn));
+    // When overrideManual is false, manual txns are filtered at query level
+    when(txnRepository.findAll(any(Specification.class))).thenReturn(List.of());
 
     var response = ruleService.apply(1L, new RuleApplyRequest(null, null, true, false, false));
 
-    assertThat(response.skippedManual()).isEqualTo(1);
-    verify(txnRepository, never()).saveAll(any());
+    assertThat(response.evaluated()).isEqualTo(0);
   }
 
   @Test

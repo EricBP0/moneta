@@ -48,7 +48,6 @@ public class RuleDtos {
     int evaluated,
     int matched,
     int updated,
-    int skippedManual,
     List<RuleApplyDetail> detailsSample
   ) {}
 }
