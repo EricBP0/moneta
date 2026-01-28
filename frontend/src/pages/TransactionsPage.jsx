@@ -146,7 +146,8 @@ const TransactionsPage = () => {
   const submitTransfer = async (event) => {
     event.preventDefault();
     // Validate that source and destination accounts are different
-    if (transferForm.fromAccountId === transferForm.toAccountId) {
+    if (transferForm.fromAccountId && transferForm.toAccountId && 
+        transferForm.fromAccountId === transferForm.toAccountId) {
       addToast('As contas de origem e destino devem ser diferentes.', 'error');
       return;
     }

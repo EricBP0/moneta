@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
         persistUser(null);
       });
     }
-  }, [refreshProfile, user]);
+  }, [refreshProfile, user, persistUser]);
 
   const value = useMemo(() => ({
     user,

@@ -33,17 +33,17 @@ const ImportPage = () => {
   const loadAccounts = useCallback(async () => {
     const data = await apiClient.get('/api/accounts');
     setAccounts(data);
-    if (!accountId && data.length > 0) {
+    if (data.length > 0 && !accountId) {
       setAccountId(String(data[0].id));
     }
-  }, [accountId]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadBatches = useCallback(async () => {
     const data = await apiClient.get('/api/import/batches');
     setBatches(data);
   }, []);
 
-  const loadRows = useCallback(async (batchId, status = statusFilter, currentPage = page) => {
+  const loadRows = useCallback(async (batchId, status, currentPage) => {
     if (!batchId) {
       return;
     }
@@ -55,7 +55,7 @@ const ImportPage = () => {
     const data = await apiClient.get(`/api/import/batches/${batchId}/rows?${query}`);
     setRows(data.rows || []);
     setRowTotals(data.totals || null);
-  }, [statusFilter, page, size]);
+  }, [size]);
 
   const selectBatch = async (batch) => {
     setSelectedBatch(batch);
@@ -154,6 +154,8 @@ const ImportPage = () => {
                 const { files } = event.target;
                 if (files && files.length > 0) {
                   setFile(files[0]);
+                } else {
+                  setFile(null);
                 }
               }}
             />
