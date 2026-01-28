@@ -112,7 +112,7 @@ public class RuleService {
 
     List<Rule> rules = ruleRepository.findAllByUserIdAndIsActiveTrueOrderByPriorityAsc(userId);
     if (rules.isEmpty()) {
-      return new RuleApplyResponse(0, 0, 0, 0, List.of());
+      return new RuleApplyResponse(0, 0, 0, List.of());
     }
 
     Specification<Txn> spec = (root, query, cb) -> {
@@ -145,14 +145,10 @@ public class RuleService {
     int evaluated = txns.size();
     int matched = 0;
     int updated = 0;
-    int skippedManual = 0;
     List<RuleApplyDetail> details = new ArrayList<>();
+    List<Txn> modifiedTxns = new ArrayList<>();
 
     for (Txn txn : txns) {
-      if (!overrideManual && txn.getCategorizationMode() == TxnCategorizationMode.MANUAL) {
-        skippedManual++;
-        continue;
-      }
       Rule matchedRule = findFirstMatch(rules, txn);
       if (matchedRule == null) {
         continue;
@@ -166,6 +162,7 @@ public class RuleService {
       }
       txn.setRuleId(matchedRule.getId());
       txn.setCategorizationMode(TxnCategorizationMode.RULE);
+      modifiedTxns.add(txn);
       if (details.size() < 20) {
         details.add(new RuleApplyDetail(
           txn.getId(),
@@ -176,12 +173,12 @@ public class RuleService {
       }
     }
 
-    if (!dryRun && matched > 0) {
-      txnRepository.saveAll(txns);
-      updated = matched;
+    if (!dryRun && !modifiedTxns.isEmpty()) {
+      txnRepository.saveAll(modifiedTxns);
+      updated = modifiedTxns.size();
     }
 
-    return new RuleApplyResponse(evaluated, matched, updated, skippedManual, details);
+    return new RuleApplyResponse(evaluated, matched, updated, details);
   }
 
   private Rule findFirstMatch(List<Rule> rules, Txn txn) {

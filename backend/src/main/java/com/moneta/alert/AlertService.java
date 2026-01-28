@@ -100,7 +100,11 @@ public class AlertService {
     alert.setBudgetId(budget.getId());
     alert.setMessage(buildMessage(budget, type));
     alert.setTriggeredAt(OffsetDateTime.now());
-    alertRepository.save(alert);
+    try {
+      alertRepository.save(alert);
+    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+      // Duplicate alert created by concurrent request; ignore
+    }
   }
 
   private String buildMessage(Budget budget, AlertType type) {

@@ -153,6 +153,7 @@ public class TxnService {
     if (request.categoryId() != null || request.subcategoryId() != null) {
       return TxnCategorizationMode.MANUAL;
     }
-    return existing;
+    // If the request explicitly clears categorization fields, return null
+    return null;
   }
 }

@@ -21,9 +21,18 @@ CREATE TABLE budgets (
   category_id BIGINT REFERENCES category(id) ON DELETE SET NULL,
   subcategory_id BIGINT,
   limit_cents BIGINT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(user_id, month_ref, category_id, subcategory_id)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Ensure uniqueness for category-level budgets (no subcategory)
+CREATE UNIQUE INDEX uniq_budgets_user_month_category
+  ON budgets (user_id, month_ref, category_id)
+  WHERE category_id IS NOT NULL AND subcategory_id IS NULL;
+
+-- Ensure uniqueness for subcategory-level budgets
+CREATE UNIQUE INDEX uniq_budgets_user_month_subcategory
+  ON budgets (user_id, month_ref, subcategory_id)
+  WHERE subcategory_id IS NOT NULL AND category_id IS NULL;
 
 CREATE INDEX idx_budgets_user_month ON budgets (user_id, month_ref);
 
