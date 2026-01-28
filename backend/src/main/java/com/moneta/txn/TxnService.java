@@ -60,6 +60,10 @@ public class TxnService {
     txn.setSubcategoryId(request.subcategoryId());
     txn.setRuleId(request.ruleId());
     txn.setImportBatchId(request.importBatchId());
+    txn.setImportRowId(request.importRowId());
+    txn.setCategorizationMode(
+      request.categorizationMode() == null ? TxnCategorizationMode.MANUAL : request.categorizationMode()
+    );
     return txnRepository.save(txn);
   }
 
@@ -118,6 +122,12 @@ public class TxnService {
     txn.setSubcategoryId(request.subcategoryId());
     txn.setRuleId(request.ruleId());
     txn.setImportBatchId(request.importBatchId());
+    if (request.importRowId() != null) {
+      txn.setImportRowId(request.importRowId());
+    }
+    if (request.categorizationMode() != null) {
+      txn.setCategorizationMode(request.categorizationMode());
+    }
     return txnRepository.save(txn);
   }
 

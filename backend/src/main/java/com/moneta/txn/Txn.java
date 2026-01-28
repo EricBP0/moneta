@@ -67,6 +67,13 @@ public class Txn {
   @Column(name = "import_batch_id")
   private Long importBatchId;
 
+  @Column(name = "import_row_id")
+  private Long importRowId;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "categorization_mode", nullable = false)
+  private TxnCategorizationMode categorizationMode = TxnCategorizationMode.MANUAL;
+
   @Column(name = "transfer_group_id")
   private UUID transferGroupId;
 
@@ -182,6 +189,22 @@ public class Txn {
 
   public void setImportBatchId(Long importBatchId) {
     this.importBatchId = importBatchId;
+  }
+
+  public Long getImportRowId() {
+    return importRowId;
+  }
+
+  public void setImportRowId(Long importRowId) {
+    this.importRowId = importRowId;
+  }
+
+  public TxnCategorizationMode getCategorizationMode() {
+    return categorizationMode;
+  }
+
+  public void setCategorizationMode(TxnCategorizationMode categorizationMode) {
+    this.categorizationMode = categorizationMode;
   }
 
   public UUID getTransferGroupId() {
