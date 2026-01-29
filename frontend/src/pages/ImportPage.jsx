@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { apiClient } from '../api/client.js';
 import { useToast } from '../components/Toast.jsx';
 
@@ -29,14 +29,16 @@ const ImportPage = () => {
   const [accountId, setAccountId] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const accountIdInitialized = useRef(false);
 
   const loadAccounts = useCallback(async () => {
     const data = await apiClient.get('/api/accounts');
     setAccounts(data);
-    if (data.length > 0 && !accountId) {
+    if (data.length > 0 && !accountIdInitialized.current) {
       setAccountId(String(data[0].id));
+      accountIdInitialized.current = true;
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadBatches = useCallback(async () => {
     const data = await apiClient.get('/api/import/batches');
