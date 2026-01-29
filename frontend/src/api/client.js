@@ -1,6 +1,45 @@
-const defaultHeaders = () => {
-  const token = localStorage.getItem('accessToken');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+const accessTokenKey = 'accessToken';
+const refreshTokenKey = 'refreshToken';
+
+const getAccessToken = () => localStorage.getItem(accessTokenKey);
+const getRefreshToken = () => localStorage.getItem(refreshTokenKey);
+
+/**
+ * Stores authentication tokens in localStorage.
+ * 
+ * Security Note: localStorage is vulnerable to XSS attacks. Tokens stored here can be
+ * accessed by any JavaScript code running in the same origin. Consider the following:
+ * - This is a common pattern for SPAs and is acceptable for many applications
+ * - For enhanced security, httpOnly cookies for refresh tokens are recommended if supported by backend
+ * - Ensure proper Content Security Policy (CSP) headers are in place
+ * - Keep tokens short-lived and implement proper refresh token rotation
+ */
+export const storeSession = (authResponse) => {
+  if (!authResponse) {
+    return;
+  }
+  localStorage.setItem(accessTokenKey, authResponse.accessToken);
+  localStorage.setItem(refreshTokenKey, authResponse.refreshToken);
+};
+
+export const clearSession = () => {
+  localStorage.removeItem(accessTokenKey);
+  localStorage.removeItem(refreshTokenKey);
+  localStorage.removeItem('user');
+};
+
+const buildHeaders = (options = {}) => {
+  const headers = { ...options.headers };
+  if (!options.skipAuth) {
+    const token = getAccessToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  if (!options.isForm && options.method !== 'GET' && options.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
+  return headers;
 };
 
 const handleResponse = async (response) => {
@@ -14,45 +53,63 @@ const handleResponse = async (response) => {
   return response.json();
 };
 
-export const apiClient = {
-  async get(path) {
-    const response = await fetch(path, {
-      headers: {
-        ...defaultHeaders()
+const refreshSession = async () => {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    throw new Error('refresh token ausente');
+  }
+  const response = await fetch('/api/auth/refresh', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ refreshToken })
+  });
+  const data = await handleResponse(response);
+  storeSession(data);
+  return data;
+};
+
+// Track ongoing refresh promise to prevent race conditions
+let refreshPromise = null;
+
+const request = async (method, path, body, options = {}) => {
+  const config = {
+    method,
+    headers: buildHeaders({ ...options, method, body }),
+    body: options.isForm ? body : body !== undefined ? JSON.stringify(body) : undefined
+  };
+  const response = await fetch(path, config);
+  if (response.status === 401 && !options.skipRefresh && !options._retry) {
+    try {
+      // Reuse existing refresh promise if one is in flight
+      if (!refreshPromise) {
+        refreshPromise = refreshSession().finally(() => {
+          refreshPromise = null;
+        });
       }
-    });
-    return handleResponse(response);
-  },
-  async post(path, body, options = {}) {
-    const headers = { ...defaultHeaders(), ...options.headers };
-    if (!options.isForm) {
-      headers['Content-Type'] = 'application/json';
+      await refreshPromise;
+      return request(method, path, body, { ...options, _retry: true });
+    } catch (error) {
+      clearSession();
+      window.location.assign('/login');
+      throw error;
     }
-    const response = await fetch(path, {
-      method: 'POST',
-      headers,
-      body: options.isForm ? body : JSON.stringify(body)
-    });
-    return handleResponse(response);
+  }
+  return handleResponse(response);
+};
+
+export const apiClient = {
+  get(path, options = {}) {
+    return request('GET', path, undefined, options);
   },
-  async patch(path, body) {
-    const response = await fetch(path, {
-      method: 'PATCH',
-      headers: {
-        ...defaultHeaders(),
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-    return handleResponse(response);
+  post(path, body, options = {}) {
+    return request('POST', path, body, options);
   },
-  async delete(path) {
-    const response = await fetch(path, {
-      method: 'DELETE',
-      headers: {
-        ...defaultHeaders()
-      }
-    });
-    return handleResponse(response);
+  patch(path, body, options = {}) {
+    return request('PATCH', path, body, options);
+  },
+  delete(path, options = {}) {
+    return request('DELETE', path, undefined, options);
   }
 };
