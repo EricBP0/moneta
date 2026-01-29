@@ -1,12 +1,19 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { Toaster } from "@/components/ui/toaster"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
 export const metadata: Metadata = {
-  title: "Moneta - Personal Finance Manager",
-  description: "Track your finances, budgets, and goals with Moneta",
+  title: "Moneta - Gestão Financeira Pessoal",
+  description: "Gerencie suas finanças, orçamentos e metas com o Moneta",
+}
+
+export const viewport: Viewport = {
+  themeColor: "#121212",
+  width: "device-width",
+  initialScale: 1,
 }
 
 export default function RootLayout({
@@ -15,8 +22,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="pt-BR">
+      <body className={`${inter.variable} font-sans`}>
+        {children}
+        <Toaster />
+      </body>
     </html>
   )
 }
