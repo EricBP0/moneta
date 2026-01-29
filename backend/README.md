@@ -18,7 +18,7 @@ The following environment variables **must** be set when running with the `prod`
 #### JWT Configuration
 - `JWT_SECRET` - Secret key for JWT token signing
   - **Must be at least 32 characters (256 bits) for secure HS256 signing**
-  - Use a strong, randomly generated secret
+  - Generate a secure random secret: `openssl rand -base64 32`
   - Never use default values like "change-me" or "secret"
 
 #### Optional Configuration
@@ -36,12 +36,14 @@ docker build -t moneta-backend .
 
 ### Running the Container
 
+By default, the Docker image runs with the `prod` Spring profile. Ensure all required environment variables are set:
+
 ```bash
 docker run -p 8080:8080 \
   -e DB_URL=jdbc:postgresql://your-db-host:5432/moneta \
   -e DB_USER=your-db-user \
   -e DB_PASSWORD=your-db-password \
-  -e JWT_SECRET=your-secure-32-char-minimum-secret \
+  -e JWT_SECRET=$(openssl rand -base64 32) \
   --name moneta-backend \
   moneta-backend
 ```
@@ -67,6 +69,16 @@ The default JVM options set `MaxRAMPercentage=75.0`. You can override these by s
 ```bash
 docker run -e JAVA_OPTS="-XX:MaxRAMPercentage=80.0 -XX:+UseG1GC" ...
 ```
+
+### Migrating from Previous Configuration
+
+If you are migrating from a previous version, note the following changes:
+
+- **Environment Variables**: The production configuration now uses:
+  - `DB_URL` (full JDBC URL) instead of separate `DB_HOST`, `DB_PORT`, `DB_NAME`
+  - `DB_PASSWORD` instead of `DB_PASS`
+- **SSL Mode**: The database connection now uses `sslmode=verify-full` instead of `sslmode=require`
+- **Spring Profile**: The Docker image automatically activates the `prod` profile via the `SPRING_PROFILES_ACTIVE` environment variable
 
 ## Development
 

@@ -7,6 +7,7 @@ RUN mvn -B package
 
 FROM eclipse-temurin:21-jre
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
+ENV SPRING_PROFILES_ACTIVE=prod
 RUN apt-get update \
   && apt-get install -y --no-install-recommends curl \
   && rm -rf /var/lib/apt/lists/* \

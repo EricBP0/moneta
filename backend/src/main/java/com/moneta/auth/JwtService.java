@@ -20,7 +20,6 @@ public class JwtService {
     @Value("${app.jwt.secret}") String secret,
     @Value("${app.jwt.access-token-ttl-minutes}") long accessTokenTtlMinutes
   ) {
-    validateSecret(secret);
     this.secretKey = Keys.hmacShaKeyFor(normalizeSecret(secret));
     this.accessTokenTtlMinutes = accessTokenTtlMinutes;
   }
@@ -50,22 +49,5 @@ public class JwtService {
       return padded.getBytes(StandardCharsets.UTF_8);
     }
     return secret.getBytes(StandardCharsets.UTF_8);
-  }
-
-  private void validateSecret(String secret) {
-    if (secret == null || secret.trim().isEmpty()) {
-      throw new IllegalArgumentException("JWT secret must not be empty");
-    }
-    if (secret.length() < 32) {
-      throw new IllegalArgumentException(
-        "JWT secret must be at least 32 characters (256 bits) for secure HS256 signing. Current length: " + secret.length()
-      );
-    }
-    // Check for common weak/default values
-    if (secret.equals("dev-secret-change-me") || secret.equals("change-me") || secret.equals("secret")) {
-      throw new IllegalArgumentException(
-        "JWT secret appears to be a default/weak value. Please use a strong, randomly generated secret."
-      );
-    }
   }
 }
