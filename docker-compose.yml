@@ -1,14 +1,11 @@
 services:
-  postgres:
-    image: postgres:16
-    container_name: moneta-postgres
-    environment:
-      POSTGRES_DB: moneta
-      POSTGRES_USER: moneta
-      POSTGRES_PASSWORD: moneta
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: moneta-backend
+    env_file:
+      - .env
     ports:
-      - "5432:5432"
-    volumes:
-      - moneta_pgdata:/var/lib/postgresql/data
-volumes:
-  moneta_pgdata:
+      - "8080:8080"
+    restart: unless-stopped
