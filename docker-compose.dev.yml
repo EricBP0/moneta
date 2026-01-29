@@ -1,0 +1,14 @@
+services: 
+  postgres: 
+    image: postgres:16 
+    container_name: moneta-postgres 
+    environment: 
+      POSTGRES_DB: moneta 
+      POSTGRES_USER: moneta 
+      POSTGRES_PASSWORD: moneta 
+    ports: 
+      - "5432:5432" 
+    volumes: 
+      - moneta_pgdata:/var/lib/postgresql/data
+    volumes: 
+      moneta_pgdata:
