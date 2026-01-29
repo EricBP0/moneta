@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client.js';
 import { formatCents, formatPercent, monthToday } from '../utils/format.js';
@@ -16,7 +16,7 @@ const BudgetsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -34,11 +34,11 @@ const BudgetsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [month, addToast]);
 
   useEffect(() => {
     loadData();
-  }, [month]);
+  }, [loadData]);
 
   const submitForm = async (event) => {
     event.preventDefault();

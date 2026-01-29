@@ -1,10 +1,18 @@
-export const formatCents = (value) => {
+const DEFAULT_CURRENCY_LOCALE = 'pt-BR';
+const DEFAULT_CURRENCY_CODE = 'BRL';
+
+export const formatCents = (value, options = {}) => {
   if (value === null || value === undefined) {
     return '—';
   }
-  return new Intl.NumberFormat('pt-BR', {
+  const {
+    locale = DEFAULT_CURRENCY_LOCALE,
+    currency = DEFAULT_CURRENCY_CODE,
+  } = options;
+
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: 'BRL'
+    currency,
   }).format(value / 100);
 };
 

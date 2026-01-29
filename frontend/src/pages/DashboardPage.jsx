@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client.js';
 import { formatCents, formatPercent, monthToday } from '../utils/format.js';
@@ -11,11 +11,11 @@ const DashboardPage = () => {
   const [error, setError] = useState('');
   const { addToast } = useToast();
 
-  const loadDashboard = async (selectedMonth = month) => {
+  const loadDashboard = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await apiClient.get(`/api/dashboard/monthly?month=${selectedMonth}`);
+      const response = await apiClient.get(`/api/dashboard/monthly?month=${month}`);
       setData(response);
     } catch (err) {
       setError(err.message);
@@ -23,11 +23,11 @@ const DashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [month, addToast]);
 
   useEffect(() => {
     loadDashboard();
-  }, [month]);
+  }, [loadDashboard]);
 
   return (
     <div className="page">

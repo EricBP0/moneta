@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../api/client.js';
 import { formatCents } from '../utils/format.js';
 import { useToast } from '../components/Toast.jsx';
@@ -20,7 +20,7 @@ const AccountsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -36,11 +36,11 @@ const AccountsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const submitForm = async (event) => {
     event.preventDefault();

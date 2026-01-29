@@ -51,7 +51,7 @@ export const GoalsPage = () => {
               </div>
               <div className="goal-progress">
                 <span>{formatCents(goal.savedSoFarCents)}</span>
-                <span className="muted">{goal.targetAmountCents ? Math.round((goal.savedSoFarCents / goal.targetAmountCents) * 100) : 0}%</span>
+                <span className="muted">{goal.targetAmountCents > 0 ? Math.round((goal.savedSoFarCents / goal.targetAmountCents) * 100) : 0}%</span>
               </div>
             </Link>
           ))}
@@ -236,7 +236,7 @@ export const GoalDetailPage = () => {
     );
   }
 
-  const percent = goal.targetAmountCents
+  const percent = goal.targetAmountCents > 0
     ? Math.round((goal.savedSoFarCents / goal.targetAmountCents) * 100)
     : 0;
 

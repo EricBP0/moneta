@@ -30,7 +30,7 @@ export const ToastProvider = ({ children }) => {
         {toasts.map((toast) => (
           <div key={toast.id} className={`toast ${toast.type}`}>
             <span>{toast.message}</span>
-            <button type="button" onClick={() => removeToast(toast.id)}>×</button>
+            <button type="button" aria-label="Close notification" onClick={() => removeToast(toast.id)}>×</button>
           </div>
         ))}
       </div>
