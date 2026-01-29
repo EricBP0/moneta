@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { apiClient, uploadFile } from "@/lib/api-client"
+import { apiClient } from "@/lib/api-client"
 import { useAppToast } from "@/contexts/toast-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -75,11 +75,25 @@ export default function ImportPage() {
       let format = "CSV"
       if (ext === "ofx") format = "OFX"
       else if (ext === "json") format = "JSON"
-      await uploadFile("/api/imports/upload", file, {
-        accountId: accountId,
-        format: format,
-        filename: file.name,
+      
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('accountId', accountId)
+      formData.append('format', format)
+      formData.append('filename', file.name)
+      
+      const response = await fetch("/api/imports/upload", {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('accessToken') : ''}`
+        }
       })
+      
+      if (!response.ok) {
+        throw new Error(await response.text() || 'Erro no upload')
+      }
+      
       addToast("Importacao iniciada.", "success")
       setFile(null)
       loadData()

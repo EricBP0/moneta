@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut, User } from "lucide-react"
+import { LogOut } from "lucide-react"
 
 export function Topbar() {
   const router = useRouter()
@@ -34,7 +34,7 @@ export function Topbar() {
     <header className="flex items-center justify-between h-16 px-6 bg-card border-b border-border">
       <div className="flex items-center gap-4">
         <h2 className="text-lg font-semibold text-foreground">
-          Ola, {user?.name?.split(" ")[0] || "Usuario"}
+          Olá, {user?.name?.split(" ")[0] || "Usuário"}
         </h2>
       </div>
 

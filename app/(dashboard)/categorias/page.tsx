@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tags, Pencil, Trash2, Plus } from "lucide-react"
+import { Pencil, Trash2, Plus } from "lucide-react"
 
 interface Category {
   id: number
