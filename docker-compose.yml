@@ -1,9 +1,9 @@
 services:
   backend:
+    image: moneta-backend
     build:
-      context: .
-      dockerfile: backend/Dockerfile
-    container_name: moneta-backend
+      context: ./backend
+      dockerfile: Dockerfile
     env_file:
       - .env
     ports:
