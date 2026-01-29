@@ -3,7 +3,7 @@ WORKDIR /workspace
 COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
 COPY src ./src
-RUN mvn -B package
+RUN mvn -B -DskipTests package
 
 FROM eclipse-temurin:21-jre
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
