@@ -9,11 +9,19 @@ Spring Boot backend application for Moneta financial management system.
 The following environment variables **must** be set when running with the `prod` profile:
 
 #### Database Configuration
-- `DB_URL` - JDBC connection URL (e.g., `jdbc:postgresql://db-host:5432/moneta`)
+- `DB_URL` - JDBC connection URL including SSL parameters
+  - **Required format:** `jdbc:postgresql://db-host:5432/moneta?sslmode=verify-full`
+  - **Must include** `sslmode=verify-full` for production security
+  - Other query parameters can be added with `&` (e.g., `?sslmode=verify-full&currentSchema=public`)
 - `DB_USER` - Database username
 - `DB_PASSWORD` - Database password
 
-**Security Note:** The application uses `sslmode=verify-full` for PostgreSQL connections. Ensure your database server has a valid SSL certificate and configure the trust store accordingly.
+**Security Note:** The application requires `sslmode=verify-full` for PostgreSQL connections. This requires the database server to present a certificate that the client trusts. In most deployments you should either:
+- Use a server certificate signed by a public or organization-wide trusted CA, **or**
+- Add your database CA certificate to the Java trust store (e.g., via `keytool`), **or**
+- Include a custom CA certificate using JDBC URL parameters such as `sslrootcert` (e.g., `jdbc:postgresql://.../moneta?sslmode=verify-full&sslrootcert=/path/to/server-ca.pem`)
+
+See the [PostgreSQL JDBC SSL documentation](https://jdbc.postgresql.org/documentation/head/ssl/) for details and platform-specific instructions.
 
 #### JWT Configuration
 - `JWT_SECRET` - Secret key for JWT token signing
@@ -40,13 +48,17 @@ By default, the Docker image runs with the `prod` Spring profile. Ensure all req
 
 ```bash
 docker run -p 8080:8080 \
-  -e DB_URL=jdbc:postgresql://your-db-host:5432/moneta \
+  -e DB_URL=jdbc:postgresql://your-db-host:5432/moneta?sslmode=verify-full \
   -e DB_USER=your-db-user \
   -e DB_PASSWORD=your-db-password \
-  -e JWT_SECRET=$(openssl rand -base64 32) \
+  -e JWT_SECRET=your-securely-stored-32-char-secret \
   --name moneta-backend \
   moneta-backend
 ```
+
+**Important:** For production deployments:
+- Generate JWT_SECRET once with `openssl rand -base64 32` and store it securely (in a secrets manager, vault, or .env file)
+- Do NOT use inline generation like `$(openssl rand -base64 32)` as this creates a new secret on each container restart, invalidating all existing tokens
 
 Or use an environment file:
 
@@ -75,9 +87,9 @@ docker run -e JAVA_OPTS="-XX:MaxRAMPercentage=80.0 -XX:+UseG1GC" ...
 If you are migrating from a previous version, note the following changes:
 
 - **Environment Variables**: The production configuration now uses:
-  - `DB_URL` (full JDBC URL) instead of separate `DB_HOST`, `DB_PORT`, `DB_NAME`
+  - `DB_URL` (full JDBC URL including `?sslmode=verify-full`) instead of separate `DB_HOST`, `DB_PORT`, `DB_NAME`
   - `DB_PASSWORD` instead of `DB_PASS`
-- **SSL Mode**: The database connection now uses `sslmode=verify-full` instead of `sslmode=require`
+- **SSL Mode**: You must include `sslmode=verify-full` in your `DB_URL` query parameters (instead of the previously auto-appended `sslmode=require`)
 - **Spring Profile**: The Docker image automatically activates the `prod` profile via the `SPRING_PROFILES_ACTIVE` environment variable
 
 ## Development
