@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   const persistUser = useCallback((nextUser: User | null) => {
+    if (typeof window === 'undefined') return
     if (nextUser) {
       localStorage.setItem(storageUserKey, JSON.stringify(nextUser))
     } else {

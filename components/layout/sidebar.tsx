@@ -22,11 +22,11 @@ import { useState } from "react"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/transacoes", label: "Transacoes", icon: ArrowLeftRight },
+  { href: "/transacoes", label: "Transações", icon: ArrowLeftRight },
   { href: "/contas", label: "Contas", icon: Wallet },
-  { href: "/instituicoes", label: "Instituicoes", icon: Building2 },
+  { href: "/instituicoes", label: "Instituições", icon: Building2 },
   { href: "/categorias", label: "Categorias", icon: Tags },
-  { href: "/orcamentos", label: "Orcamentos", icon: PiggyBank },
+  { href: "/orcamentos", label: "Orçamentos", icon: PiggyBank },
   { href: "/regras", label: "Regras", icon: Wand2 },
   { href: "/importar", label: "Importar", icon: Upload },
   { href: "/metas", label: "Metas", icon: Target },
@@ -48,7 +48,7 @@ export function Sidebar() {
         {!collapsed && (
           <div className="flex flex-col">
             <h1 className="text-xl font-bold text-foreground">Moneta</h1>
-            <span className="text-xs text-muted-foreground">Gestao Financeira</span>
+            <span className="text-xs text-muted-foreground">Gestão Financeira</span>
           </div>
         )}
         <Button
