@@ -76,6 +76,11 @@ export default function ImportPage() {
       if (ext === "ofx") format = "OFX"
       else if (ext === "json") format = "JSON"
       
+      // Note: This uses fetch directly instead of apiClient because multipart/form-data
+      // upload is not yet implemented in apiClient. This means:
+      // - No automatic token refresh on 401 (manual handling would be needed)
+      // - No automatic retry logic
+      // TODO: Implement multipart/form-data support in apiClient for consistent error handling
       const formData = new FormData()
       formData.append('file', file)
       formData.append('accountId', accountId)
@@ -94,7 +99,7 @@ export default function ImportPage() {
         throw new Error(await response.text() || 'Erro no upload')
       }
       
-      addToast("Importacao iniciada.", "success")
+      addToast("Importação iniciada.", "success")
       setFile(null)
       loadData()
     } catch (err) {
