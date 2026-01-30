@@ -22,6 +22,7 @@ interface Account {
 interface Category {
   id: number
   name: string
+  color: string | null
 }
 
 interface Transaction {
@@ -378,7 +379,19 @@ export default function TransactionsPage() {
                       <TableCell>{new Date(txn.occurredAt).toLocaleDateString("pt-BR")}</TableCell>
                       <TableCell>{accounts.find((a) => a.id === txn.accountId)?.name || txn.accountId}</TableCell>
                       <TableCell>{txn.description || "—"}</TableCell>
-                      <TableCell>{categories.find((c) => c.id === txn.categoryId)?.name || "—"}</TableCell>
+                      <TableCell>
+                        {txn.categoryId ? (
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: categories.find((c) => c.id === txn.categoryId)?.color || "#6b7280" }}
+                            />
+                            <span>{categories.find((c) => c.id === txn.categoryId)?.name || "—"}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           txn.direction === "IN" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
