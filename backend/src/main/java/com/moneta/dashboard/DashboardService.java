@@ -86,16 +86,18 @@ public class DashboardService {
     List<Alert> alerts = alertRepository.findAllByUserIdAndMonthRef(userId, monthRef);
     
     // Filter out alerts with null budgetId (e.g., goal-related alerts)
-    long alertsWithNullBudgetId = alerts.stream()
-      .filter(alert -> alert.getBudgetId() == null)
-      .count();
-    if (alertsWithNullBudgetId > 0) {
+    long totalAlerts = alerts.size();
+    List<Alert> alertsWithBudgetId = alerts.stream()
+      .filter(alert -> alert.getBudgetId() != null)
+      .toList();
+    
+    long filteredCount = totalAlerts - alertsWithBudgetId.size();
+    if (filteredCount > 0) {
       logger.debug("Filtered {} alerts with null budgetId for user {} in month {}", 
-        alertsWithNullBudgetId, userId, monthRef);
+        filteredCount, userId, monthRef);
     }
     
-    Map<Long, List<AlertType>> alertMap = alerts.stream()
-      .filter(alert -> alert.getBudgetId() != null)
+    Map<Long, List<AlertType>> alertMap = alertsWithBudgetId.stream()
       .collect(Collectors.groupingBy(Alert::getBudgetId, Collectors.mapping(Alert::getType, Collectors.toList())));
 
     List<BudgetStatus> budgetStatuses = new ArrayList<>();
