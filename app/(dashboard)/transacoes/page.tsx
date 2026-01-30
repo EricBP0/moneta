@@ -42,7 +42,7 @@ const defaultTxnForm = {
   description: "",
   occurredAt: "",
   status: "CLEARED" as "CLEARED" | "PENDING",
-  categoryId: undefined as string | undefined,
+  categoryId: "NONE" as string,
 }
 
 const defaultTransferForm = {

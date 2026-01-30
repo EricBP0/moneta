@@ -29,6 +29,14 @@ const defaultForm = {
   targetDate: "",
 }
 
+function formatMonthYear(dateString: string | null): string {
+  if (!dateString || !dateString.includes("-")) return ""
+  const parts = dateString.split("-")
+  if (parts.length < 2) return ""
+  const [year, month] = parts
+  return `${month}/${year}`
+}
+
 export default function GoalsPage() {
   const { addToast } = useAppToast()
   const [goals, setGoals] = useState<Goal[]>([])
@@ -175,6 +183,7 @@ export default function GoalsPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {goals.map((goal) => {
             const percent = getPercent(goal)
+            const formattedDate = formatMonthYear(goal.targetDate)
             return (
               <Card key={goal.id} className="bg-card border-border">
                 <CardHeader className="flex flex-row items-start justify-between pb-2">
@@ -210,9 +219,9 @@ export default function GoalsPage() {
                     </div>
                     <Progress value={Math.min(percent, 100)} className="h-2" />
                   </div>
-                  {goal.targetDate && (
+                  {formattedDate && (
                     <p className="text-xs text-muted-foreground">
-                      Prazo: {goal.targetDate.split("-").reverse().join("/")}
+                      Prazo: {formattedDate}
                     </p>
                   )}
                   <Button variant="outline" size="sm" className="w-full" onClick={() => openDeposit(goal.id)}>
@@ -272,7 +281,6 @@ export default function GoalsPage() {
                 type="month"
                 value={form.targetDate}
                 onChange={(e) => setForm((prev) => ({ ...prev, targetDate: e.target.value }))}
-                required
                 className="bg-input border-border"
               />
             </div>

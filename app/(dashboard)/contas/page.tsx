@@ -32,7 +32,7 @@ const defaultForm = {
   type: "CHECKING",
   currency: "BRL",
   initialBalanceCents: "",
-  institutionId: undefined as string | undefined,
+  institutionId: "NONE",
 }
 
 export default function AccountsPage() {

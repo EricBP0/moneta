@@ -176,7 +176,21 @@ function useToast() {
     ...state,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
-    remove: (toastId?: string) => dispatch({ type: "REMOVE_TOAST", toastId }),
+    remove: (toastId?: string) => {
+      // Clear any pending timeout when removing directly
+      if (toastId && toastTimeouts.has(toastId)) {
+        const timeout = toastTimeouts.get(toastId)
+        if (timeout !== undefined) {
+          clearTimeout(timeout)
+        }
+        toastTimeouts.delete(toastId)
+      } else if (!toastId) {
+        // If no specific toastId, clear all timeouts
+        toastTimeouts.forEach((timeout) => clearTimeout(timeout))
+        toastTimeouts.clear()
+      }
+      dispatch({ type: "REMOVE_TOAST", toastId })
+    },
   }
 }
 
