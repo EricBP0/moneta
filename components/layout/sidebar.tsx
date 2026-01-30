@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
@@ -47,9 +48,25 @@ export function Sidebar() {
       <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
         {!collapsed && (
           <div className="flex flex-col">
-            <h1 className="text-xl font-bold text-foreground">Moneta</h1>
+            <Image
+              src="/brand/logo.png"
+              alt="Moneta"
+              width={160}
+              height={40}
+              className="h-8 w-auto"
+              priority
+            />
             <span className="text-xs text-muted-foreground">Gestão Financeira</span>
           </div>
+        )}
+        {collapsed && (
+          <Image
+            src="/brand/icon.png"
+            alt="Moneta"
+            width={32}
+            height={32}
+            className="h-8 w-8"
+          />
         )}
         <Button
           variant="ghost"

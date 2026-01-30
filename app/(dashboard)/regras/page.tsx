@@ -41,8 +41,8 @@ const defaultForm = {
   priority: "0",
   matchType: "CONTAINS",
   pattern: "",
-  categoryId: "",
-  accountId: "",
+  categoryId: "NONE" as string,
+  accountId: "ALL" as string,
   isActive: true,
 }
 
@@ -86,9 +86,9 @@ export default function RulesPage() {
         priority: Number(form.priority),
         matchType: form.matchType,
         pattern: form.pattern,
-        categoryId: form.categoryId ? Number(form.categoryId) : null,
+        categoryId: form.categoryId && form.categoryId !== "NONE" ? Number(form.categoryId) : null,
         subcategoryId: null,
-        accountId: form.accountId ? Number(form.accountId) : null,
+        accountId: form.accountId && form.accountId !== "ALL" ? Number(form.accountId) : null,
         isActive: form.isActive,
       }
       if (editing) {
@@ -114,8 +114,8 @@ export default function RulesPage() {
       priority: String(rule.priority),
       matchType: rule.matchType,
       pattern: rule.pattern,
-      categoryId: rule.categoryId ? String(rule.categoryId) : "",
-      accountId: rule.accountId ? String(rule.accountId) : "",
+      categoryId: rule.categoryId ? String(rule.categoryId) : "NONE",
+      accountId: rule.accountId ? String(rule.accountId) : "ALL",
       isActive: rule.isActive,
     })
   }
@@ -238,12 +238,15 @@ export default function RulesPage() {
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label>Categoria</Label>
-                <Select value={form.categoryId} onValueChange={(v) => setForm((prev) => ({ ...prev, categoryId: v }))}>
+                <Select
+                  value={form.categoryId}
+                  onValueChange={(v) => setForm((prev) => ({ ...prev, categoryId: v }))}
+                >
                   <SelectTrigger className="bg-input border-border">
                     <SelectValue placeholder="Sem categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sem categoria</SelectItem>
+                    <SelectItem value="NONE">Sem categoria</SelectItem>
                     {categories.map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                     ))}
@@ -252,12 +255,15 @@ export default function RulesPage() {
               </div>
               <div className="space-y-2">
                 <Label>Conta</Label>
-                <Select value={form.accountId} onValueChange={(v) => setForm((prev) => ({ ...prev, accountId: v }))}>
+                <Select
+                  value={form.accountId}
+                  onValueChange={(v) => setForm((prev) => ({ ...prev, accountId: v }))}
+                >
                   <SelectTrigger className="bg-input border-border">
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="ALL">Todas</SelectItem>
                     {accounts.map((a) => (
                       <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
                     ))}

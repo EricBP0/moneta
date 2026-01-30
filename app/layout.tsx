@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 export const metadata: Metadata = {
   title: "Moneta - Gestão Financeira Pessoal",
   description: "Gerencie suas finanças, orçamentos e metas com o Moneta",
+  icons: {
+    icon: "/favicon.ico",
+  },
 }
 
 export const viewport: Viewport = {
