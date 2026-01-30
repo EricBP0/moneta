@@ -70,6 +70,12 @@ export default function ImportPage() {
       // Show preview for CSV files
       if (ext === "csv") {
         try {
+          // Limit preview to small files (max 1MB)
+          if (selectedFile.size > 1024 * 1024) {
+            setFilePreview(`Arquivo CSV selecionado: ${selectedFile.name} (muito grande para preview)`)
+            return
+          }
+          
           const text = await selectedFile.text()
           const lines = text.split("\n").slice(0, 6) // First 6 lines (header + 5 rows)
           setFilePreview(lines.join("\n"))
@@ -77,7 +83,12 @@ export default function ImportPage() {
           console.error("Error reading file:", err)
         }
       } else {
-        setFilePreview(`Arquivo ${ext?.toUpperCase()} selecionado: ${selectedFile.name}`)
+        const hasExtension = selectedFile.name.includes(".") && !!ext
+        if (hasExtension) {
+          setFilePreview(`Arquivo ${ext.toUpperCase()} selecionado: ${selectedFile.name}`)
+        } else {
+          setFilePreview(`Arquivo selecionado: ${selectedFile.name}`)
+        }
       }
     }
   }
@@ -142,8 +153,13 @@ export default function ImportPage() {
     link.setAttribute("download", "modelo-transacoes.csv")
     link.style.visibility = "hidden"
     document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    
+    try {
+      link.click()
+    } finally {
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }
     
     addToast("Modelo CSV baixado.", "success")
   }
