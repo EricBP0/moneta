@@ -10,11 +10,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.moneta.support.WebIntegrationTest;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 
+@Tag("integration")
 class ImportFlowIntegrationTest extends WebIntegrationTest {
   @Test
   void uploadCommitAndApplyRulesOnImport() throws Exception {

@@ -10,10 +10,12 @@ import com.moneta.support.WebIntegrationTest;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
+@Tag("integration")
 class GoalFlowIntegrationTest extends WebIntegrationTest {
   @Test
   void tracksGoalProjectionAndAlerts() throws Exception {

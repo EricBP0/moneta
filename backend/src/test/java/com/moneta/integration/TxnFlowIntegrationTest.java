@@ -9,10 +9,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.moneta.support.WebIntegrationTest;
 import java.time.OffsetDateTime;
 import java.util.Map;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
+@Tag("integration")
 class TxnFlowIntegrationTest extends WebIntegrationTest {
   @Test
   void createsTxnsFiltersByMonthAndHandlesTransfer() throws Exception {
