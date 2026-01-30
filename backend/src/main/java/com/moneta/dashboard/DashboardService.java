@@ -72,14 +72,18 @@ public class DashboardService {
     long net = income - expense;
 
     List<CategoryExpenseProjection> expenseRows = txnRepository.findCategoryExpenses(userId, monthRef);
-    Map<Long, String> categoryNames = categoryRepository.findAllByUserIdAndIsActiveTrue(userId).stream()
-      .collect(Collectors.toMap(Category::getId, Category::getName));
+    Map<Long, Category> categoryMap = categoryRepository.findAllByUserIdAndIsActiveTrue(userId).stream()
+      .collect(Collectors.toMap(Category::getId, category -> category));
     List<CategorySpend> byCategory = expenseRows.stream()
-      .map(row -> new CategorySpend(
-        row.getCategoryId(),
-        categoryNames.get(row.getCategoryId()),
-        row.getExpenseCents()
-      ))
+      .map(row -> {
+        Category category = categoryMap.get(row.getCategoryId());
+        return new CategorySpend(
+          row.getCategoryId(),
+          category != null ? category.getName() : null,
+          category != null ? category.getColor() : null,
+          row.getExpenseCents()
+        );
+      })
       .toList();
 
     List<Budget> budgets = budgetRepository.findAllByUserIdAndMonthRef(userId, monthRef);
