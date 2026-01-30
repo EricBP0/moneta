@@ -19,6 +19,7 @@ public class DashboardDtos {
   public record CategorySpend(
     Long categoryId,
     String categoryName,
+    String categoryColor,
     long expenseCents
   ) {}
 

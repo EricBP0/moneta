@@ -374,55 +374,58 @@ export default function TransactionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {txns.map((txn) => (
-                    <TableRow key={txn.id} className="border-border">
-                      <TableCell>{new Date(txn.occurredAt).toLocaleDateString("pt-BR")}</TableCell>
-                      <TableCell>{accounts.find((a) => a.id === txn.accountId)?.name || txn.accountId}</TableCell>
-                      <TableCell>{txn.description || "—"}</TableCell>
-                      <TableCell>
-                        {txn.categoryId ? (
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: categories.find((c) => c.id === txn.categoryId)?.color || "#6b7280" }}
-                            />
-                            <span>{categories.find((c) => c.id === txn.categoryId)?.name || "—"}</span>
+                  {txns.map((txn) => {
+                    const category = txn.categoryId ? categories.find((c) => c.id === txn.categoryId) : null;
+                    return (
+                      <TableRow key={txn.id} className="border-border">
+                        <TableCell>{new Date(txn.occurredAt).toLocaleDateString("pt-BR")}</TableCell>
+                        <TableCell>{accounts.find((a) => a.id === txn.accountId)?.name || txn.accountId}</TableCell>
+                        <TableCell>{txn.description || "—"}</TableCell>
+                        <TableCell>
+                          {category ? (
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: category.color || "#6b7280" }}
+                              />
+                              <span>{category.name || "—"}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            txn.direction === "IN" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
+                          }`}>
+                            {txn.direction === "IN" ? "Entrada" : "Saida"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            txn.status === "CLEARED" ? "bg-primary/10 text-primary" : "bg-yellow-500/10 text-yellow-500"
+                          }`}>
+                            {txn.status}
+                          </span>
+                        </TableCell>
+                        <TableCell className={`text-right font-medium ${
+                          txn.direction === "IN" ? "text-primary" : "text-destructive"
+                        }`}>
+                          {txn.direction === "IN" ? "+" : "-"}{formatCents(txn.amountCents)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(txn)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => deleteTxn(txn.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          txn.direction === "IN" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
-                        }`}>
-                          {txn.direction === "IN" ? "Entrada" : "Saida"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          txn.status === "CLEARED" ? "bg-primary/10 text-primary" : "bg-yellow-500/10 text-yellow-500"
-                        }`}>
-                          {txn.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className={`text-right font-medium ${
-                        txn.direction === "IN" ? "text-primary" : "text-destructive"
-                      }`}>
-                        {txn.direction === "IN" ? "+" : "-"}{formatCents(txn.amountCents)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(txn)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteTxn(txn.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>

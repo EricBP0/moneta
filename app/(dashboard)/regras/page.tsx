@@ -231,7 +231,7 @@ export default function RulesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Regras</h1>
-        <p className="text-muted-foreground">Automatize categorizacoes.</p>
+        <p className="text-muted-foreground">Automatize categorizações.</p>
       </div>
 
       {/* How It Works */}

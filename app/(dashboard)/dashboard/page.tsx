@@ -41,7 +41,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 
 interface DashboardData {
   incomeCents: number
@@ -117,7 +117,14 @@ function SortableCard({ id, children }: SortableCardProps) {
 
   return (
     <div ref={setNodeRef} style={style} className="relative">
-      <div className="absolute top-4 right-4 z-10 cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+      <div 
+        className="absolute top-4 right-4 z-10 cursor-grab active:cursor-grabbing" 
+        {...attributes} 
+        {...listeners}
+        role="button"
+        aria-label="Drag handle"
+        tabIndex={0}
+      >
         <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
       </div>
       {children}
@@ -171,9 +178,23 @@ export default function DashboardPage() {
     if (savedLayout) {
       try {
         const parsed = JSON.parse(savedLayout) as DashboardCardType[]
-        setCardOrder(parsed)
+        
+        // Validate the parsed layout
+        const isValid = Array.isArray(parsed) && 
+          parsed.every(id => DEFAULT_CARD_ORDER.includes(id)) &&
+          parsed.length === DEFAULT_CARD_ORDER.length &&
+          new Set(parsed).size === parsed.length
+        
+        if (isValid) {
+          setCardOrder(parsed)
+        } else {
+          // Invalid layout: reset to default
+          localStorage.removeItem("dashboard-card-order")
+          setCardOrder(DEFAULT_CARD_ORDER)
+        }
       } catch {
         // If parsing fails, use default
+        localStorage.removeItem("dashboard-card-order")
         setCardOrder(DEFAULT_CARD_ORDER)
       }
     }
@@ -186,6 +207,13 @@ export default function DashboardPage() {
       setCardOrder((items) => {
         const oldIndex = items.indexOf(active.id as DashboardCardType)
         const newIndex = items.indexOf(over.id as DashboardCardType)
+        
+        // Guard against invalid indices; if found, reset layout and stored order
+        if (oldIndex < 0 || newIndex < 0) {
+          localStorage.removeItem("dashboard-card-order")
+          return DEFAULT_CARD_ORDER
+        }
+        
         const newOrder = arrayMove(items, oldIndex, newIndex)
         
         // Save to localStorage
@@ -438,9 +466,6 @@ export default function DashboardPage() {
   )
 
   const renderCard = (cardType: DashboardCardType) => {
-    const CardWrapper = isEditMode ? SortableCard : "div"
-    const wrapperProps = isEditMode ? { id: cardType } : {}
-
     const cardContent = (() => {
       switch (cardType) {
         case "accounts":
@@ -511,10 +536,10 @@ export default function DashboardPage() {
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="flex items-center justify-between py-4">
             <p className="text-sm text-foreground">
-              Arraste os cards pela alca para reorganizar o layout. As alteracoes sao salvas automaticamente.
+              Arraste os cards pela alça para reorganizar o layout. As alterações são salvas automaticamente.
             </p>
             <Button variant="outline" size="sm" onClick={resetLayout}>
-              Restaurar Padrao
+              Restaurar Padrão
             </Button>
           </CardContent>
         </Card>
