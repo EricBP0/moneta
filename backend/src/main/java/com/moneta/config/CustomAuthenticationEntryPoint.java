@@ -17,7 +17,11 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper;
+
+  public CustomAuthenticationEntryPoint(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
   @Override
   public void commence(

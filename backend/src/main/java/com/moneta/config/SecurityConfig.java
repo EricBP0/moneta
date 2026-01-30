@@ -41,8 +41,8 @@ public class SecurityConfig {
       )
       .authorizeHttpRequests(auth -> auth
         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow preflight requests without authentication
-        .requestMatchers("/api/auth/**").permitAll()
-        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+        .requestMatchers(SecurityConstants.AUTH_PATH_PATTERN).permitAll()
+        .requestMatchers(SecurityConstants.ACTUATOR_HEALTH_PATH, SecurityConstants.ACTUATOR_INFO_PATH).permitAll()
         .anyRequest().authenticated()
       )
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

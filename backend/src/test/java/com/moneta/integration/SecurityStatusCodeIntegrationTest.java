@@ -43,19 +43,19 @@ class SecurityStatusCodeIntegrationTest extends WebIntegrationTest {
   }
 
   @Test
-  void accessPublicEndpointWithoutToken_shouldReturn200() throws Exception {
+  void publicEndpointWithBadCredentials_shouldNotReturn403() throws Exception {
     Map<String, String> loginRequest = Map.of(
       "email", "test@example.com",
       "password", "wrongpassword"
     );
 
-    // Public endpoint should be accessible without token (even if credentials are wrong, it should not return 403)
+    // Public endpoint should be accessible without token, even with bad credentials
+    // Should return 400 or 401 for bad credentials, but never 403
     MvcResult result = mockMvc.perform(post("/api/auth/login")
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(loginRequest)))
       .andReturn();
 
-    // Should return 400 or 401 for bad credentials, but never 403 for public endpoint
     int status = result.getResponse().getStatus();
     assertThat(status).isNotEqualTo(403);
   }

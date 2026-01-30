@@ -17,7 +17,11 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper;
+
+  public CustomAccessDeniedHandler(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
   @Override
   public void handle(
