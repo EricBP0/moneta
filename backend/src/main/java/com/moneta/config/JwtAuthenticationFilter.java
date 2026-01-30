@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +20,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   public JwtAuthenticationFilter(JwtService jwtService) {
     this.jwtService = jwtService;
+  }
+  
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    String path = request.getRequestURI();
+    // Skip JWT processing for public paths and OPTIONS requests
+    return Arrays.stream(SecurityConstants.PUBLIC_PATH_PREFIXES).anyMatch(path::startsWith) || 
+           "OPTIONS".equalsIgnoreCase(request.getMethod());
   }
 
   @Override
