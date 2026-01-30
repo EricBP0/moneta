@@ -83,8 +83,7 @@ export default function ImportPage() {
           console.error("Error reading file:", err)
         }
       } else {
-        const hasExtension = selectedFile.name.includes(".") && !!ext
-        if (hasExtension) {
+        if (ext) {
           setFilePreview(`Arquivo ${ext.toUpperCase()} selecionado: ${selectedFile.name}`)
         } else {
           setFilePreview(`Arquivo selecionado: ${selectedFile.name}`)

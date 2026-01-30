@@ -375,8 +375,7 @@ export default function TransactionsPage() {
                 </TableHeader>
                 <TableBody>
                   {txns.map((txn) => {
-                    const category = txn.categoryId ? categories.find((c) => c.id === txn.categoryId) : null
-                    
+                    const category = txn.categoryId ? categories.find((c) => c.id === txn.categoryId) : null;
                     return (
                       <TableRow key={txn.id} className="border-border">
                         <TableCell>{new Date(txn.occurredAt).toLocaleDateString("pt-BR")}</TableCell>
