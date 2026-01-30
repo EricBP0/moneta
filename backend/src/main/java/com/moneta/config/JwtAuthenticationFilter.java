@@ -7,6 +7,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,9 +18,24 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JwtService jwtService;
+  
+  // Paths that should not be processed by JWT filter
+  private static final List<String> PUBLIC_PATHS = Arrays.asList(
+    "/api/auth/",
+    "/actuator/health",
+    "/actuator/info"
+  );
 
   public JwtAuthenticationFilter(JwtService jwtService) {
     this.jwtService = jwtService;
+  }
+  
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    String path = request.getRequestURI();
+    // Skip JWT processing for public paths and OPTIONS requests
+    return PUBLIC_PATHS.stream().anyMatch(path::startsWith) || 
+           "OPTIONS".equalsIgnoreCase(request.getMethod());
   }
 
   @Override

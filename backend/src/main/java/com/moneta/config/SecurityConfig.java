@@ -16,9 +16,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+  private final CustomAccessDeniedHandler accessDeniedHandler;
 
-  public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+  public SecurityConfig(
+    JwtAuthenticationFilter jwtAuthenticationFilter,
+    CustomAuthenticationEntryPoint authenticationEntryPoint,
+    CustomAccessDeniedHandler accessDeniedHandler
+  ) {
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    this.authenticationEntryPoint = authenticationEntryPoint;
+    this.accessDeniedHandler = accessDeniedHandler;
   }
 
   @Bean
@@ -27,6 +35,10 @@ public class SecurityConfig {
       .cors(Customizer.withDefaults()) // Enable CORS using the CorsConfigurationSource bean
       .csrf(csrf -> csrf.disable())
       .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+      .exceptionHandling(exceptions -> exceptions
+        .authenticationEntryPoint(authenticationEntryPoint) // Return 401 for unauthenticated requests
+        .accessDeniedHandler(accessDeniedHandler) // Return 403 for unauthorized requests
+      )
       .authorizeHttpRequests(auth -> auth
         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow preflight requests without authentication
         .requestMatchers("/api/auth/**").permitAll()
