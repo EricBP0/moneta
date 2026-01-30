@@ -50,8 +50,8 @@ jobs:
                 echo 'Healthcheck passed'; \
                 exit 0; \
               fi; \
-              echo \"Attempt \$i failed, retrying in 2s...\"; \
-              sleep 2; \
+              echo \"Attempt \$i failed, retrying in 10s...\"; \
+              sleep 10; \
             done; \
             echo 'Healthcheck failed after 30 attempts'; \
             exit 1"
