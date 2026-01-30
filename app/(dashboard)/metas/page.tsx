@@ -183,6 +183,7 @@ export default function GoalsPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {goals.map((goal) => {
             const percent = getPercent(goal)
+            const formattedDate = formatMonthYear(goal.targetDate)
             return (
               <Card key={goal.id} className="bg-card border-border">
                 <CardHeader className="flex flex-row items-start justify-between pb-2">
@@ -218,14 +219,11 @@ export default function GoalsPage() {
                     </div>
                     <Progress value={Math.min(percent, 100)} className="h-2" />
                   </div>
-                  {(() => {
-                    const formattedDate = formatMonthYear(goal.targetDate)
-                    return formattedDate ? (
-                      <p className="text-xs text-muted-foreground">
-                        Prazo: {formattedDate}
-                      </p>
-                    ) : null
-                  })()}
+                  {formattedDate && (
+                    <p className="text-xs text-muted-foreground">
+                      Prazo: {formattedDate}
+                    </p>
+                  )}
                   <Button variant="outline" size="sm" className="w-full" onClick={() => openDeposit(goal.id)}>
                     <DollarSign className="mr-2 h-4 w-4" />
                     Depositar
