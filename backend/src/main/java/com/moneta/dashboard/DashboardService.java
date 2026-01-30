@@ -81,6 +81,7 @@ public class DashboardService {
     List<Budget> budgets = budgetRepository.findAllByUserIdAndMonthRef(userId, monthRef);
     List<Alert> alerts = alertRepository.findAllByUserIdAndMonthRef(userId, monthRef);
     Map<Long, List<AlertType>> alertMap = alerts.stream()
+      .filter(alert -> alert.getBudgetId() != null)
       .collect(Collectors.groupingBy(Alert::getBudgetId, Collectors.mapping(Alert::getType, Collectors.toList())));
 
     List<BudgetStatus> budgetStatuses = new ArrayList<>();
