@@ -180,7 +180,9 @@ function useToast() {
       // Clear any pending timeout when removing directly
       if (toastId && toastTimeouts.has(toastId)) {
         const timeout = toastTimeouts.get(toastId)
-        if (timeout) clearTimeout(timeout)
+        if (timeout !== undefined) {
+          clearTimeout(timeout)
+        }
         toastTimeouts.delete(toastId)
       } else if (!toastId) {
         // If no specific toastId, clear all timeouts

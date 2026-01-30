@@ -218,11 +218,14 @@ export default function GoalsPage() {
                     </div>
                     <Progress value={Math.min(percent, 100)} className="h-2" />
                   </div>
-                  {goal.targetDate && (
-                    <p className="text-xs text-muted-foreground">
-                      Prazo: {formatMonthYear(goal.targetDate)}
-                    </p>
-                  )}
+                  {(() => {
+                    const formattedDate = formatMonthYear(goal.targetDate)
+                    return formattedDate ? (
+                      <p className="text-xs text-muted-foreground">
+                        Prazo: {formattedDate}
+                      </p>
+                    ) : null
+                  })()}
                   <Button variant="outline" size="sm" className="w-full" onClick={() => openDeposit(goal.id)}>
                     <DollarSign className="mr-2 h-4 w-4" />
                     Depositar
