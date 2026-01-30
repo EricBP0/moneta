@@ -21,11 +21,14 @@ public class CorsConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     
-    // Allow requests from Vercel and production domains
+    // Allow requests from Vercel, production domains, and localhost for development
     configuration.setAllowedOriginPatterns(Arrays.asList(
       "https://*.vercel.app",
       "https://echomoneta.com.br",
-      "https://www.echomoneta.com.br"
+      "https://www.echomoneta.com.br",
+      "http://localhost:3000",
+      "http://localhost:4200",
+      "http://localhost:5173"
     ));
     
     // Allow common HTTP methods
@@ -33,11 +36,15 @@ public class CorsConfig {
       "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
     ));
     
-    // Allow all headers - the frontend can send any header
-    configuration.setAllowedHeaders(Arrays.asList("*"));
+    // Allow only specific headers required by the frontend
+    configuration.setAllowedHeaders(Arrays.asList(
+      "Content-Type",
+      "Authorization",
+      "Accept"
+    ));
     
-    // Expose Authorization header so frontend can read JWT tokens from responses
-    configuration.setExposedHeaders(Arrays.asList("Authorization"));
+    // Note: JWT tokens are returned in response body (accessToken, refreshToken fields),
+    // not in headers, so no need to expose the Authorization header
     
     // Set to false since we're using JWT tokens (not cookies)
     // If you plan to use cookies for authentication, change this to true
