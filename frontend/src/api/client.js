@@ -2,7 +2,6 @@ const accessTokenKey = 'accessToken';
 const refreshTokenKey = 'refreshToken';
 
 const getAccessToken = () => localStorage.getItem(accessTokenKey);
-const getRefreshToken = () => localStorage.getItem(refreshTokenKey);
 
 /**
  * Stores authentication tokens in localStorage.
@@ -53,26 +52,6 @@ const handleResponse = async (response) => {
   return response.json();
 };
 
-const refreshSession = async () => {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    throw new Error('refresh token ausente');
-  }
-  const response = await fetch('/api/auth/refresh', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ refreshToken })
-  });
-  const data = await handleResponse(response);
-  storeSession(data);
-  return data;
-};
-
-// Track ongoing refresh promise to prevent race conditions
-let refreshPromise = null;
-
 const request = async (method, path, body, options = {}) => {
   const config = {
     method,
@@ -80,21 +59,12 @@ const request = async (method, path, body, options = {}) => {
     body: options.isForm ? body : body !== undefined ? JSON.stringify(body) : undefined
   };
   const response = await fetch(path, config);
-  if (response.status === 401 && !options.skipRefresh && !options._retry) {
-    try {
-      // Reuse existing refresh promise if one is in flight
-      if (!refreshPromise) {
-        refreshPromise = refreshSession().finally(() => {
-          refreshPromise = null;
-        });
-      }
-      await refreshPromise;
-      return request(method, path, body, { ...options, _retry: true });
-    } catch (error) {
-      clearSession();
+  if (response.status === 401) {
+    clearSession();
+    if (window.location.pathname !== '/login') {
       window.location.assign('/login');
-      throw error;
     }
+    throw new Error('Sessão expirada. Faça login novamente.');
   }
   return handleResponse(response);
 };

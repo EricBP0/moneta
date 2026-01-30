@@ -1,13 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../api/client.js';
-import { formatCents } from '../utils/format.js';
+import { formatCents, parseMoneyToCents } from '../utils/format.js';
 import { useToast } from '../components/Toast.jsx';
+import MoneyInput from '../components/MoneyInput.jsx';
+import {
+  ACCOUNT_TYPE_OPTIONS,
+  CURRENCY_OPTIONS,
+  getAccountTypeLabel,
+  getCurrencyLabel
+} from '../constants/labels.js';
 
 const defaultForm = {
   name: '',
   type: 'CHECKING',
   currency: 'BRL',
-  initialBalanceCents: '',
+  initialBalance: '',
   institutionId: ''
 };
 
@@ -45,11 +52,12 @@ const AccountsPage = () => {
   const submitForm = async (event) => {
     event.preventDefault();
     try {
+      const initialBalanceCents = parseMoneyToCents(form.initialBalance);
       const payload = {
         name: form.name,
         type: form.type,
         currency: form.currency,
-        initialBalanceCents: Number(form.initialBalanceCents),
+        initialBalanceCents,
         institutionId: form.institutionId ? Number(form.institutionId) : null
       };
       if (editing) {
@@ -73,7 +81,7 @@ const AccountsPage = () => {
       name: account.name,
       type: account.type,
       currency: account.currency,
-      initialBalanceCents: String(account.initialBalanceCents),
+      initialBalance: formatCents(account.initialBalanceCents || 0).replace('R$', '').trim(),
       institutionId: account.institutionId ? String(account.institutionId) : ''
     });
   };
@@ -109,19 +117,25 @@ const AccountsPage = () => {
           </label>
           <label>
             Tipo
-            <input value={form.type} onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))} required />
+            <select value={form.type} onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))} required>
+              {ACCOUNT_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
           </label>
           <label>
             Moeda
-            <input value={form.currency} onChange={(event) => setForm((prev) => ({ ...prev, currency: event.target.value }))} required />
+            <select value={form.currency} onChange={(event) => setForm((prev) => ({ ...prev, currency: event.target.value }))} required>
+              {CURRENCY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
           </label>
           <label>
-            Saldo inicial (centavos)
-            <input
-              type="number"
-              min="0"
-              value={form.initialBalanceCents}
-              onChange={(event) => setForm((prev) => ({ ...prev, initialBalanceCents: event.target.value }))}
+            Saldo inicial
+            <MoneyInput
+              value={form.initialBalance}
+              onChange={(value) => setForm((prev) => ({ ...prev, initialBalance: value }))}
               required
             />
           </label>
@@ -156,7 +170,7 @@ const AccountsPage = () => {
             <div key={account.id} className="row">
               <div>
                 <strong>{account.name}</strong>
-                <div className="muted">{account.type} · {account.currency}</div>
+                <div className="muted">{getAccountTypeLabel(account.type)} · {getCurrencyLabel(account.currency)}</div>
                 <div className="muted">Instituição: {institutions.find((inst) => inst.id === account.institutionId)?.name || '—'}</div>
               </div>
               <div className="row-actions">

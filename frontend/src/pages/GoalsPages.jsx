@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { apiClient } from '../api/client.js';
-import { formatCents } from '../utils/format.js';
+import { formatCents, parseMoneyToCents } from '../utils/format.js';
 import { useToast } from '../components/Toast.jsx';
+import DatePicker from '../components/DatePicker.jsx';
+import MoneyInput from '../components/MoneyInput.jsx';
+import { getGoalStatusLabel } from '../constants/labels.js';
 
 export const GoalsPage = () => {
   const { addToast } = useToast();
@@ -66,7 +69,7 @@ export const GoalCreatePage = () => {
   const { addToast } = useToast();
   const [form, setForm] = useState({
     name: '',
-    targetAmountCents: '',
+    targetAmount: '',
     targetDate: '',
     startDate: '',
     monthlyRateBps: ''
@@ -79,9 +82,15 @@ export const GoalCreatePage = () => {
     setLoading(true);
     setMessage('');
     try {
+      const targetAmountCents = parseMoneyToCents(form.targetAmount);
+      if (targetAmountCents <= 0) {
+        setMessage('Informe um valor alvo válido.');
+        setLoading(false);
+        return;
+      }
       const payload = {
         name: form.name,
-        targetAmountCents: Number(form.targetAmountCents),
+        targetAmountCents,
         targetDate: form.targetDate,
         startDate: form.startDate || null,
         monthlyRateBps: form.monthlyRateBps ? Number(form.monthlyRateBps) : 0
@@ -114,18 +123,16 @@ export const GoalCreatePage = () => {
             />
           </label>
           <label>
-            Valor alvo (centavos)
-            <input
-              type="number"
-              min="1"
-              value={form.targetAmountCents}
-              onChange={(event) => setForm((prev) => ({ ...prev, targetAmountCents: event.target.value }))}
+            Valor alvo
+            <MoneyInput
+              value={form.targetAmount}
+              onChange={(value) => setForm((prev) => ({ ...prev, targetAmount: value }))}
               required
             />
           </label>
           <label>
             Data alvo
-            <input
+            <DatePicker
               type="month"
               value={form.targetDate}
               onChange={(event) => setForm((prev) => ({ ...prev, targetDate: event.target.value }))}
@@ -134,7 +141,7 @@ export const GoalCreatePage = () => {
           </label>
           <label>
             Data inicial (opcional)
-            <input
+            <DatePicker
               type="date"
               value={form.startDate}
               onChange={(event) => setForm((prev) => ({ ...prev, startDate: event.target.value }))}
@@ -170,7 +177,7 @@ export const GoalDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [contributionForm, setContributionForm] = useState({
     contributedAt: '',
-    amountCents: '',
+    amount: '',
     note: ''
   });
 
@@ -200,9 +207,14 @@ export const GoalDetailPage = () => {
     event.preventDefault();
     setMessage('');
     try {
+      const amountCents = parseMoneyToCents(contributionForm.amount);
+      if (amountCents <= 0) {
+        setMessage('Informe um valor válido para o aporte.');
+        return;
+      }
       const payload = {
         contributedAt: contributionForm.contributedAt,
-        amountCents: Number(contributionForm.amountCents),
+        amountCents,
         note: contributionForm.note
       };
       const response = await apiClient.post(`/api/goals/${id}/contributions`, payload);
@@ -212,7 +224,7 @@ export const GoalDetailPage = () => {
         ...prev,
         savedSoFarCents: (prev.savedSoFarCents || 0) + payload.amountCents
       }));
-      setContributionForm({ contributedAt: '', amountCents: '', note: '' });
+      setContributionForm({ contributedAt: '', amount: '', note: '' });
       addToast('Aporte registrado.', 'success');
     } catch (err) {
       setMessage(err.message);
@@ -245,7 +257,7 @@ export const GoalDetailPage = () => {
       <header className="page-header">
         <div>
           <h1>{goal.name}</h1>
-          <p className="muted">Meta até {goal.targetDate} · Status {goal.status}</p>
+          <p className="muted">Meta até {goal.targetDate} · Status {getGoalStatusLabel(goal.status)}</p>
         </div>
         <Link className="button secondary" to="/goals">Voltar</Link>
       </header>
@@ -283,7 +295,7 @@ export const GoalDetailPage = () => {
         <form onSubmit={handleContribution} className="form">
           <label>
             Data
-            <input
+            <DatePicker
               type="date"
               value={contributionForm.contributedAt}
               onChange={(event) => setContributionForm((prev) => ({ ...prev, contributedAt: event.target.value }))}
@@ -291,12 +303,10 @@ export const GoalDetailPage = () => {
             />
           </label>
           <label>
-            Valor (centavos)
-            <input
-              type="number"
-              min="1"
-              value={contributionForm.amountCents}
-              onChange={(event) => setContributionForm((prev) => ({ ...prev, amountCents: event.target.value }))}
+            Valor
+            <MoneyInput
+              value={contributionForm.amount}
+              onChange={(value) => setContributionForm((prev) => ({ ...prev, amount: value }))}
               required
             />
           </label>

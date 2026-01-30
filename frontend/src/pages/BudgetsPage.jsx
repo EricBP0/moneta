@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client.js';
-import { formatCents, formatPercent, monthToday } from '../utils/format.js';
+import { formatCents, formatPercent, monthToday, parseMoneyToCents } from '../utils/format.js';
 import { useToast } from '../components/Toast.jsx';
+import DatePicker from '../components/DatePicker.jsx';
+import MoneyInput from '../components/MoneyInput.jsx';
 
-const defaultForm = { monthRef: monthToday(), categoryId: '', limitCents: '' };
+const defaultForm = { monthRef: monthToday(), categoryId: '', limit: '' };
 
 const BudgetsPage = () => {
   const { addToast } = useToast();
@@ -43,15 +45,20 @@ const BudgetsPage = () => {
   const submitForm = async (event) => {
     event.preventDefault();
     try {
+      const limitCents = parseMoneyToCents(form.limit);
+      if (limitCents <= 0) {
+        addToast('Informe um limite válido.', 'error');
+        return;
+      }
       const payload = {
         monthRef: form.monthRef,
         categoryId: form.categoryId ? Number(form.categoryId) : null,
         subcategoryId: null,
-        limitCents: Number(form.limitCents)
+        limitCents
       };
       await apiClient.post('/api/budgets', payload);
       addToast('Orçamento criado.', 'success');
-      setForm((prev) => ({ ...prev, limitCents: '' }));
+      setForm((prev) => ({ ...prev, limit: '' }));
       loadData();
     } catch (err) {
       addToast(err.message, 'error');
@@ -82,7 +89,7 @@ const BudgetsPage = () => {
         </div>
         <label className="inline-field">
           Mês
-          <input type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
+          <DatePicker type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
         </label>
       </header>
 
@@ -91,7 +98,7 @@ const BudgetsPage = () => {
         <form onSubmit={submitForm} className="form">
           <label>
             Mês
-            <input type="month" value={form.monthRef} onChange={(event) => setForm((prev) => ({ ...prev, monthRef: event.target.value }))} required />
+            <DatePicker type="month" value={form.monthRef} onChange={(event) => setForm((prev) => ({ ...prev, monthRef: event.target.value }))} required />
           </label>
           <label>
             Categoria
@@ -103,12 +110,10 @@ const BudgetsPage = () => {
             </select>
           </label>
           <label>
-            Limite (centavos)
-            <input
-              type="number"
-              min="1"
-              value={form.limitCents}
-              onChange={(event) => setForm((prev) => ({ ...prev, limitCents: event.target.value }))}
+            Limite
+            <MoneyInput
+              value={form.limit}
+              onChange={(value) => setForm((prev) => ({ ...prev, limit: value }))}
               required
             />
           </label>

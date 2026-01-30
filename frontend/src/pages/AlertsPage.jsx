@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../api/client.js';
 import { monthToday } from '../utils/format.js';
 import { useToast } from '../components/Toast.jsx';
+import DatePicker from '../components/DatePicker.jsx';
+import { getAlertLabel } from '../constants/labels.js';
 
 const AlertsPage = () => {
   const { addToast } = useToast();
@@ -38,6 +40,22 @@ const AlertsPage = () => {
     }
   };
 
+  const markAllRead = async () => {
+    const unread = alerts.filter((alert) => !alert.isRead);
+    if (unread.length === 0) {
+      addToast('Nenhum alerta pendente.', 'success');
+      return;
+    }
+    setAlerts((prev) => prev.map((alert) => ({ ...alert, isRead: true })));
+    try {
+      await Promise.all(unread.map((alert) => apiClient.patch(`/api/alerts/${alert.id}`, { isRead: true })));
+      addToast('Alertas marcados como lidos.', 'success');
+    } catch (err) {
+      addToast('Não foi possível marcar todos os alertas.', 'error');
+      loadAlerts();
+    }
+  };
+
   return (
     <div className="page">
       <header className="page-header">
@@ -47,11 +65,15 @@ const AlertsPage = () => {
         </div>
         <label className="inline-field">
           Mês
-          <input type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
+          <DatePicker type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
         </label>
       </header>
 
       <section className="card">
+        <div className="section-header">
+          <h2>Lista</h2>
+          <button type="button" className="button secondary" onClick={markAllRead}>Marcar todos</button>
+        </div>
         {loading && <p className="muted">Carregando alertas...</p>}
         {error && <p className="error">{error}</p>}
         {!loading && alerts.length === 0 && <p className="muted">Nenhum alerta encontrado.</p>}
@@ -59,7 +81,7 @@ const AlertsPage = () => {
           {alerts.map((alert) => (
             <div key={alert.id} className={`row ${alert.isRead ? 'row-muted' : ''}`}>
               <div>
-                <strong>{alert.type}</strong>
+                <strong>{getAlertLabel(alert.type)}</strong>
                 <div className="muted">{alert.message}</div>
                 <div className="muted">{new Date(alert.triggeredAt).toLocaleDateString('pt-BR')}</div>
               </div>

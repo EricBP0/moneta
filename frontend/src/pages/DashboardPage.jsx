@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client.js';
 import { formatCents, formatPercent, monthToday } from '../utils/format.js';
 import { useToast } from '../components/Toast.jsx';
+import DatePicker from '../components/DatePicker.jsx';
+import { getAlertLabel, getGoalStatusLabel } from '../constants/labels.js';
 
 const DashboardPage = () => {
   const [month, setMonth] = useState(monthToday());
@@ -38,7 +40,7 @@ const DashboardPage = () => {
         </div>
         <label className="inline-field">
           Mês
-          <input type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
+          <DatePicker type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
         </label>
       </header>
 
@@ -108,7 +110,7 @@ const DashboardPage = () => {
               {data.alerts.map((alert) => (
                 <div key={alert.id} className={`row ${alert.isRead ? 'row-muted' : ''}`}>
                   <div>
-                    <strong>{alert.type}</strong>
+                    <strong>{getAlertLabel(alert.type)}</strong>
                     <div className="muted">{alert.message}</div>
                   </div>
                   <span className="muted">{new Date(alert.triggeredAt).toLocaleDateString('pt-BR')}</span>
@@ -128,7 +130,7 @@ const DashboardPage = () => {
                 <div key={goal.goalId} className="row">
                   <div>
                     <strong>{goal.name}</strong>
-                    <div className="muted">{formatPercent(goal.percent)} · {goal.status}</div>
+                    <div className="muted">{formatPercent(goal.percent)} · {getGoalStatusLabel(goal.status)}</div>
                   </div>
                   <div className="muted">Necessário {formatCents(goal.neededMonthlyCents)}</div>
                 </div>

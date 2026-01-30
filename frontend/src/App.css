@@ -6,6 +6,7 @@
 
 body {
   margin: 0;
+  overflow-x: hidden;
 }
 
 a {
@@ -64,6 +65,13 @@ a {
   padding: 16px 32px;
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
+  gap: 12px;
+}
+
+.topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .content {
@@ -118,6 +126,7 @@ header {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .actions {
@@ -323,6 +332,14 @@ td {
   gap: 8px;
 }
 
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: block;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -457,14 +474,126 @@ td {
   gap: 8px;
 }
 
+.icon-button {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #1f2933;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.icon-button:hover {
+  background: #f1f5f9;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+.mobile-list {
+  display: grid;
+  gap: 16px;
+}
+
+.mobile-card {
+  margin-bottom: 0;
+}
+
+.mobile-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.mobile-card-amount {
+  font-weight: 600;
+}
+
+.mobile-card-body {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mobile-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.date-picker,
+.money-input {
+  width: 100%;
+}
+
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
   }
 
   .sidebar {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(260px, 80vw);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    z-index: 30;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    border: none;
     z-index: 20;
+  }
+
+  .content {
+    padding: 20px 16px 48px;
+  }
+
+  .topbar {
+    padding: 16px;
+  }
+
+  .page-header,
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .row-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .table-wrapper {
+    overflow-x: hidden;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+
+  .desktop-only {
+    display: none;
   }
 }

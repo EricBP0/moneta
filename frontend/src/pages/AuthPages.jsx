@@ -61,14 +61,18 @@ export const RegisterPage = () => {
   const navigate = useNavigate();
   const { register, loading } = useAuth();
   const { addToast } = useToast();
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
+    if (form.password !== form.confirmPassword) {
+      setError('As senhas não conferem.');
+      return;
+    }
     try {
-      await register(form);
+      await register({ name: form.name, email: form.email, password: form.password });
       addToast('Conta criada com sucesso.', 'success');
       navigate('/dashboard');
     } catch (err) {
@@ -105,6 +109,15 @@ export const RegisterPage = () => {
               type="password"
               value={form.password}
               onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+              required
+            />
+          </label>
+          <label>
+            Confirmar senha
+            <input
+              type="password"
+              value={form.confirmPassword}
+              onChange={(event) => setForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
               required
             />
           </label>

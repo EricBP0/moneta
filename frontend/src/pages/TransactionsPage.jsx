@@ -1,11 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '../api/client.js';
-import { formatCents, monthToday, toIsoDateTime } from '../utils/format.js';
+import { formatCents, monthToday, parseMoneyToCents, toIsoDateTime } from '../utils/format.js';
 import { useToast } from '../components/Toast.jsx';
+import DatePicker from '../components/DatePicker.jsx';
+import MoneyInput from '../components/MoneyInput.jsx';
+import {
+  getTransactionDirectionLabel,
+  getTransactionStatusLabel,
+  TRANSACTION_DIRECTION_OPTIONS,
+  TRANSACTION_STATUS_OPTIONS
+} from '../constants/labels.js';
 
 const defaultTxnForm = {
   accountId: '',
-  amountCents: '',
+  amount: '',
   direction: 'OUT',
   description: '',
   occurredAt: '',
@@ -16,7 +24,7 @@ const defaultTxnForm = {
 const defaultTransferForm = {
   fromAccountId: '',
   toAccountId: '',
-  amountCents: '',
+  amount: '',
   occurredAt: '',
   description: ''
 };
@@ -94,7 +102,7 @@ const TransactionsPage = () => {
     setEditing(txn);
     setForm({
       accountId: String(txn.accountId || ''),
-      amountCents: String(txn.amountCents || ''),
+      amount: formatCents(txn.amountCents || 0).replace('R$', '').trim(),
       direction: txn.direction,
       description: txn.description || '',
       occurredAt: txn.occurredAt ? new Date(txn.occurredAt).toISOString().slice(0, 16) : '',
@@ -107,9 +115,14 @@ const TransactionsPage = () => {
   const submitTxn = async (event) => {
     event.preventDefault();
     try {
+      const amountCents = parseMoneyToCents(form.amount);
+      if (amountCents <= 0) {
+        addToast('Informe um valor válido.', 'error');
+        return;
+      }
       const payload = {
         accountId: Number(form.accountId),
-        amountCents: Number(form.amountCents),
+        amountCents,
         direction: form.direction,
         description: form.description,
         occurredAt: toIsoDateTime(form.occurredAt),
@@ -152,10 +165,15 @@ const TransactionsPage = () => {
       return;
     }
     try {
+      const amountCents = parseMoneyToCents(transferForm.amount);
+      if (amountCents <= 0) {
+        addToast('Informe um valor válido.', 'error');
+        return;
+      }
       const payload = {
         fromAccountId: Number(transferForm.fromAccountId),
         toAccountId: Number(transferForm.toAccountId),
-        amountCents: Number(transferForm.amountCents),
+        amountCents,
         occurredAt: toIsoDateTime(transferForm.occurredAt),
         description: transferForm.description
       };
@@ -204,7 +222,11 @@ const TransactionsPage = () => {
         <div className="filters-grid">
           <label>
             Mês
-            <input type="month" value={filters.month} onChange={(event) => setFilters((prev) => ({ ...prev, month: event.target.value }))} />
+            <DatePicker
+              type="month"
+              value={filters.month}
+              onChange={(event) => setFilters((prev) => ({ ...prev, month: event.target.value }))}
+            />
           </label>
           <label>
             Conta
@@ -232,16 +254,18 @@ const TransactionsPage = () => {
             Direção
             <select value={filters.direction} onChange={(event) => setFilters((prev) => ({ ...prev, direction: event.target.value }))}>
               <option value="">Todas</option>
-              <option value="IN">Entrada</option>
-              <option value="OUT">Saída</option>
+              {TRANSACTION_DIRECTION_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </label>
           <label>
             Status
             <select value={filters.status} onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value }))}>
               <option value="">Todos</option>
-              <option value="CLEARED">Cleared</option>
-              <option value="PENDING">Pending</option>
+              {TRANSACTION_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </label>
         </div>
@@ -256,39 +280,76 @@ const TransactionsPage = () => {
         {error && <p className="error">{error}</p>}
         {!loading && txns.length === 0 && <p className="muted">Nenhuma transação encontrada.</p>}
         {txns.length > 0 && (
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Conta</th>
-                  <th>Descrição</th>
-                  <th>Categoria</th>
-                  <th>Direção</th>
-                  <th>Status</th>
-                  <th>Valor</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {txns.map((txn) => (
-                  <tr key={txn.id}>
-                    <td>{new Date(txn.occurredAt).toLocaleDateString('pt-BR')}</td>
-                    <td>{accounts.find((account) => account.id === txn.accountId)?.name || txn.accountId}</td>
-                    <td>{txn.description || '—'}</td>
-                    <td>{categories.find((category) => category.id === txn.categoryId)?.name || '—'}</td>
-                    <td>{txn.direction}</td>
-                    <td>{txn.status}</td>
-                    <td>{formatCents(txn.amountCents)}</td>
-                    <td className="table-actions">
-                      <button type="button" className="button secondary" onClick={() => openEdit(txn)}>Editar</button>
-                      <button type="button" className="button danger" onClick={() => deleteTxn(txn.id)}>Excluir</button>
-                    </td>
+          <>
+            <div className="table-wrapper desktop-only">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Conta</th>
+                    <th>Descrição</th>
+                    <th>Categoria</th>
+                    <th>Direção</th>
+                    <th>Status</th>
+                    <th>Valor</th>
+                    <th></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {txns.map((txn) => (
+                    <tr key={txn.id}>
+                      <td>{new Date(txn.occurredAt).toLocaleDateString('pt-BR')}</td>
+                      <td>{accounts.find((account) => account.id === txn.accountId)?.name || txn.accountId}</td>
+                      <td>{txn.description || '—'}</td>
+                      <td>{categories.find((category) => category.id === txn.categoryId)?.name || '—'}</td>
+                      <td>{getTransactionDirectionLabel(txn.direction)}</td>
+                      <td>{getTransactionStatusLabel(txn.status)}</td>
+                      <td>{formatCents(txn.amountCents)}</td>
+                      <td className="table-actions">
+                        <button type="button" className="button secondary" onClick={() => openEdit(txn)}>Editar</button>
+                        <button type="button" className="button danger" onClick={() => deleteTxn(txn.id)}>Excluir</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mobile-only mobile-list">
+              {txns.map((txn) => (
+                <div key={txn.id} className="card mobile-card">
+                  <div className="mobile-card-header">
+                    <div>
+                      <strong>{txn.description || 'Sem descrição'}</strong>
+                      <div className="muted">{new Date(txn.occurredAt).toLocaleDateString('pt-BR')}</div>
+                    </div>
+                    <div className="mobile-card-amount">{formatCents(txn.amountCents)}</div>
+                  </div>
+                  <div className="mobile-card-body">
+                    <div>
+                      <span className="muted">Conta</span>
+                      <div>{accounts.find((account) => account.id === txn.accountId)?.name || txn.accountId}</div>
+                    </div>
+                    <div>
+                      <span className="muted">Categoria</span>
+                      <div>{categories.find((category) => category.id === txn.categoryId)?.name || '—'}</div>
+                    </div>
+                    <div>
+                      <span className="muted">Direção</span>
+                      <div>{getTransactionDirectionLabel(txn.direction)}</div>
+                    </div>
+                    <div>
+                      <span className="muted">Status</span>
+                      <div>{getTransactionStatusLabel(txn.status)}</div>
+                    </div>
+                  </div>
+                  <div className="mobile-card-actions">
+                    <button type="button" className="button secondary" onClick={() => openEdit(txn)}>Editar</button>
+                    <button type="button" className="button danger" onClick={() => deleteTxn(txn.id)}>Excluir</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </section>
 
@@ -307,25 +368,24 @@ const TransactionsPage = () => {
                 </select>
               </label>
               <label>
-                Valor (centavos)
-                <input
-                  type="number"
-                  min="1"
-                  value={form.amountCents}
-                  onChange={(event) => setForm((prev) => ({ ...prev, amountCents: event.target.value }))}
+                Valor
+                <MoneyInput
+                  value={form.amount}
+                  onChange={(value) => setForm((prev) => ({ ...prev, amount: value }))}
                   required
                 />
               </label>
               <label>
                 Direção
                 <select value={form.direction} onChange={(event) => setForm((prev) => ({ ...prev, direction: event.target.value }))}>
-                  <option value="IN">Entrada</option>
-                  <option value="OUT">Saída</option>
+                  {TRANSACTION_DIRECTION_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </label>
               <label>
                 Data/Hora
-                <input
+                <DatePicker
                   type="datetime-local"
                   value={form.occurredAt}
                   onChange={(event) => setForm((prev) => ({ ...prev, occurredAt: event.target.value }))}
@@ -348,8 +408,9 @@ const TransactionsPage = () => {
               <label>
                 Status
                 <select value={form.status} onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value }))}>
-                  <option value="CLEARED">Cleared</option>
-                  <option value="PENDING">Pending</option>
+                  {TRANSACTION_STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </label>
               <div className="form-actions">
@@ -385,18 +446,16 @@ const TransactionsPage = () => {
                 </select>
               </label>
               <label>
-                Valor (centavos)
-                <input
-                  type="number"
-                  min="1"
-                  value={transferForm.amountCents}
-                  onChange={(event) => setTransferForm((prev) => ({ ...prev, amountCents: event.target.value }))}
+                Valor
+                <MoneyInput
+                  value={transferForm.amount}
+                  onChange={(value) => setTransferForm((prev) => ({ ...prev, amount: value }))}
                   required
                 />
               </label>
               <label>
                 Data/Hora
-                <input
+                <DatePicker
                   type="datetime-local"
                   value={transferForm.occurredAt}
                   onChange={(event) => setTransferForm((prev) => ({ ...prev, occurredAt: event.target.value }))}

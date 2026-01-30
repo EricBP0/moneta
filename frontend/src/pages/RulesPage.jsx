@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../api/client.js';
 import { useToast } from '../components/Toast.jsx';
 import { monthToday } from '../utils/format.js';
+import DatePicker from '../components/DatePicker.jsx';
 
 const matchTypes = ['CONTAINS', 'STARTS_WITH', 'REGEX'];
 
@@ -136,7 +137,7 @@ const RulesPage = () => {
         </div>
         <label className="inline-field">
           Mês
-          <input type="month" value={applyMonth} onChange={(event) => setApplyMonth(event.target.value)} />
+          <DatePicker type="month" value={applyMonth} onChange={(event) => setApplyMonth(event.target.value)} />
         </label>
       </section>
 

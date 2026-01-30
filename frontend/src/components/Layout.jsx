@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 
@@ -18,6 +18,7 @@ const navItems = [
 const Layout = ({ children }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [isNavOpen, setIsNavOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -26,7 +27,7 @@ const Layout = ({ children }) => {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <aside className={`sidebar ${isNavOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h1>Moneta</h1>
           <p className="muted">MVP Financeiro</p>
@@ -37,15 +38,25 @@ const Layout = ({ children }) => {
               key={item.to}
               to={item.to}
               className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+              onClick={() => setIsNavOpen(false)}
             >
               {item.label}
             </NavLink>
           ))}
         </nav>
       </aside>
+      {isNavOpen && <button type="button" className="sidebar-overlay" onClick={() => setIsNavOpen(false)} aria-label="Fechar menu" />}
       <div className="main">
         <header className="topbar">
-          <div>
+          <div className="topbar-title">
+            <button
+              type="button"
+              className="icon-button mobile-only"
+              onClick={() => setIsNavOpen((prev) => !prev)}
+              aria-label="Abrir menu"
+            >
+              ☰
+            </button>
             <strong>Olá, {user?.name || 'Usuário'}</strong>
             <p className="muted">{user?.email}</p>
           </div>
