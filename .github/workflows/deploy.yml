@@ -11,6 +11,9 @@ concurrency:
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://api.echomoneta.com.br
     defaults:
       run:
         shell: bash
@@ -52,3 +55,11 @@ jobs:
             done; \
             echo 'Healthcheck failed after 30 attempts'; \
             exit 1"
+
+      - name: Deployment success notification
+        if: success()
+        run: echo "✅ Deployment to production completed successfully!"
+
+      - name: Deployment failure notification
+        if: failure()
+        run: echo "❌ Deployment to production failed!"
