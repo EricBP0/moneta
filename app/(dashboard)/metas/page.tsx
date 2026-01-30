@@ -29,6 +29,14 @@ const defaultForm = {
   targetDate: "",
 }
 
+function formatMonthYear(dateString: string | null): string {
+  if (!dateString || !dateString.includes("-")) return ""
+  const parts = dateString.split("-")
+  if (parts.length < 2) return ""
+  const [year, month] = parts
+  return `${month}/${year}`
+}
+
 export default function GoalsPage() {
   const { addToast } = useAppToast()
   const [goals, setGoals] = useState<Goal[]>([])
@@ -212,10 +220,7 @@ export default function GoalsPage() {
                   </div>
                   {goal.targetDate && (
                     <p className="text-xs text-muted-foreground">
-                      Prazo: {(() => {
-                        const [year, month] = goal.targetDate.split("-")
-                        return `${month}/${year}`
-                      })()}
+                      Prazo: {formatMonthYear(goal.targetDate)}
                     </p>
                   )}
                   <Button variant="outline" size="sm" className="w-full" onClick={() => openDeposit(goal.id)}>
