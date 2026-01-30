@@ -22,14 +22,15 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Run unit tests
-        run: mvn -B -f backend/pom.xml test
-
       - name: Check Docker availability
         id: docker
         run: docker info
         continue-on-error: true
 
-      - name: Run integration tests (Testcontainers)
+      - name: Run unit tests (no Docker)
+        if: steps.docker.outcome != 'success'
+        run: mvn -B -f backend/pom.xml test
+
+      - name: Run unit and integration tests (Docker available)
         if: steps.docker.outcome == 'success'
         run: mvn -B -f backend/pom.xml -Pit verify

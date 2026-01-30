@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
@@ -13,7 +17,6 @@ jobs:
     env:
       VM_HOST: ${{ secrets.VM_HOST }}
       VM_USER: ${{ secrets.VM_USER }}
-      VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
       VM_SSH_PORT: ${{ secrets.VM_SSH_PORT || '22' }}
       VM_DEPLOY_PATH: ${{ secrets.VM_DEPLOY_PATH }}
     steps:
@@ -28,7 +31,7 @@ jobs:
       - name: Add VM to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "$VM_SSH_PORT" "$VM_HOST" >> ~/.ssh/known_hosts
+          echo "${{ secrets.VM_HOST_KEY }}" >> ~/.ssh/known_hosts
 
       - name: Deploy backend via SSH
         run: |
@@ -39,4 +42,13 @@ jobs:
             git reset --hard origin/main; \
             docker compose down; \
             docker compose up -d --build; \
-            curl -fsS http://localhost:8080/actuator/health"
+            for i in {1..30}; do \
+              if curl -fsS http://localhost:8080/actuator/health; then \
+                echo 'Healthcheck passed'; \
+                exit 0; \
+              fi; \
+              echo \"Attempt \$i failed, retrying in 2s...\"; \
+              sleep 2; \
+            done; \
+            echo 'Healthcheck failed after 30 attempts'; \
+            exit 1"
