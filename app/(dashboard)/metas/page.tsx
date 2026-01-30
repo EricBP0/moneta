@@ -18,7 +18,7 @@ interface Goal {
   name: string
   targetAmountCents: number
   currentAmountCents: number
-  deadline: string | null
+  targetDate: string | null
   status: string
 }
 
@@ -26,7 +26,7 @@ const defaultForm = {
   name: "",
   targetAmountCents: "",
   currentAmountCents: "",
-  deadline: "",
+  targetDate: "",
 }
 
 export default function GoalsPage() {
@@ -68,19 +68,23 @@ export default function GoalsPage() {
       name: goal.name,
       targetAmountCents: String(goal.targetAmountCents),
       currentAmountCents: String(goal.currentAmountCents),
-      deadline: goal.deadline ? new Date(goal.deadline).toISOString().slice(0, 10) : "",
+      targetDate: goal.targetDate ?? "",
     })
     setIsFormOpen(true)
   }
 
   const submitForm = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (!form.targetDate) {
+      addToast("Informe a data alvo da meta.", "error")
+      return
+    }
     try {
       const payload = {
         name: form.name,
         targetAmountCents: Number(form.targetAmountCents),
         currentAmountCents: Number(form.currentAmountCents),
-        deadline: form.deadline || null,
+        targetDate: form.targetDate,
       }
       if (editing) {
         await apiClient.patch(`/api/goals/${editing.id}`, payload)
@@ -206,9 +210,9 @@ export default function GoalsPage() {
                     </div>
                     <Progress value={Math.min(percent, 100)} className="h-2" />
                   </div>
-                  {goal.deadline && (
+                  {goal.targetDate && (
                     <p className="text-xs text-muted-foreground">
-                      Prazo: {new Date(goal.deadline).toLocaleDateString("pt-BR")}
+                      Prazo: {goal.targetDate.split("-").reverse().join("/")}
                     </p>
                   )}
                   <Button variant="outline" size="sm" className="w-full" onClick={() => openDeposit(goal.id)}>
@@ -263,11 +267,12 @@ export default function GoalsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Prazo</Label>
+              <Label>Data alvo</Label>
               <Input
-                type="date"
-                value={form.deadline}
-                onChange={(e) => setForm((prev) => ({ ...prev, deadline: e.target.value }))}
+                type="month"
+                value={form.targetDate}
+                onChange={(e) => setForm((prev) => ({ ...prev, targetDate: e.target.value }))}
+                required
                 className="bg-input border-border"
               />
             </div>

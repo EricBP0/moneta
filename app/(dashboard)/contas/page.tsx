@@ -32,7 +32,7 @@ const defaultForm = {
   type: "CHECKING",
   currency: "BRL",
   initialBalanceCents: "",
-  institutionId: "",
+  institutionId: undefined as string | undefined,
 }
 
 export default function AccountsPage() {
@@ -71,7 +71,7 @@ export default function AccountsPage() {
         type: form.type,
         currency: form.currency,
         initialBalanceCents: Number(form.initialBalanceCents),
-        institutionId: form.institutionId ? Number(form.institutionId) : null,
+        institutionId: form.institutionId && form.institutionId !== "NONE" ? Number(form.institutionId) : null,
       }
       if (editing) {
         await apiClient.patch(`/api/accounts/${editing.id}`, payload)
@@ -96,7 +96,7 @@ export default function AccountsPage() {
       type: account.type,
       currency: account.currency,
       initialBalanceCents: String(account.initialBalanceCents),
-      institutionId: account.institutionId ? String(account.institutionId) : "",
+      institutionId: account.institutionId ? String(account.institutionId) : "NONE",
     })
   }
 
@@ -175,12 +175,15 @@ export default function AccountsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Instituicao</Label>
-                <Select value={form.institutionId} onValueChange={(v) => setForm((prev) => ({ ...prev, institutionId: v }))}>
+                <Select
+                  value={form.institutionId}
+                  onValueChange={(v) => setForm((prev) => ({ ...prev, institutionId: v }))}
+                >
                   <SelectTrigger className="bg-input border-border">
                     <SelectValue placeholder="Sem instituicao" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sem instituicao</SelectItem>
+                    <SelectItem value="NONE">Sem instituicao</SelectItem>
                     {institutions.map((inst) => (
                       <SelectItem key={inst.id} value={String(inst.id)}>{inst.name}</SelectItem>
                     ))}

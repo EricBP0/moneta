@@ -3,13 +3,14 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { useAuth } from "@/contexts/auth-context"
 import { useAppToast } from "@/contexts/toast-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, Wallet } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -35,9 +36,14 @@ export default function RegisterPage() {
     <Card className="w-full max-w-md bg-card border-border">
       <CardHeader className="space-y-2 text-center">
         <div className="flex justify-center mb-2">
-          <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10">
-            <Wallet className="w-7 h-7 text-primary" />
-          </div>
+          <Image
+            src="/brand/logo.png"
+            alt="Moneta"
+            width={180}
+            height={48}
+            className="h-12 w-auto"
+            priority
+          />
         </div>
         <CardTitle className="text-2xl font-bold">Criar conta</CardTitle>
         <CardDescription>

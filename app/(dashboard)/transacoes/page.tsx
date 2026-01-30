@@ -36,18 +36,18 @@ interface Transaction {
 }
 
 const defaultTxnForm = {
-  accountId: "",
+  accountId: undefined as string | undefined,
   amountCents: "",
   direction: "OUT" as "IN" | "OUT",
   description: "",
   occurredAt: "",
   status: "CLEARED" as "CLEARED" | "PENDING",
-  categoryId: "",
+  categoryId: undefined as string | undefined,
 }
 
 const defaultTransferForm = {
-  fromAccountId: "",
-  toAccountId: "",
+  fromAccountId: undefined as string | undefined,
+  toAccountId: undefined as string | undefined,
   amountCents: "",
   occurredAt: "",
   description: "",
@@ -57,11 +57,11 @@ export default function TransactionsPage() {
   const { addToast } = useAppToast()
   const [filters, setFilters] = useState({
     month: monthToday(),
-    accountId: "",
-    categoryId: "",
+    accountId: "ALL",
+    categoryId: "ALL",
     query: "",
-    direction: "",
-    status: "",
+    direction: "ALL",
+    status: "ALL",
   })
   const [accounts, setAccounts] = useState<Account[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -76,11 +76,11 @@ export default function TransactionsPage() {
   const filterQuery = useMemo(() => {
     const params = new URLSearchParams()
     if (filters.month) params.append("month", filters.month)
-    if (filters.accountId) params.append("accountId", filters.accountId)
-    if (filters.categoryId) params.append("categoryId", filters.categoryId)
+    if (filters.accountId && filters.accountId !== "ALL") params.append("accountId", filters.accountId)
+    if (filters.categoryId && filters.categoryId !== "ALL") params.append("categoryId", filters.categoryId)
     if (filters.query) params.append("q", filters.query)
-    if (filters.direction) params.append("direction", filters.direction)
-    if (filters.status) params.append("status", filters.status)
+    if (filters.direction && filters.direction !== "ALL") params.append("direction", filters.direction)
+    if (filters.status && filters.status !== "ALL") params.append("status", filters.status)
     return params.toString()
   }, [filters])
 
@@ -122,19 +122,23 @@ export default function TransactionsPage() {
   const openEdit = (txn: Transaction) => {
     setEditing(txn)
     setForm({
-      accountId: String(txn.accountId || ""),
+      accountId: String(txn.accountId),
       amountCents: String(txn.amountCents || ""),
       direction: txn.direction,
       description: txn.description || "",
       occurredAt: txn.occurredAt ? new Date(txn.occurredAt).toISOString().slice(0, 16) : "",
       status: txn.status || "CLEARED",
-      categoryId: txn.categoryId ? String(txn.categoryId) : "",
+      categoryId: txn.categoryId ? String(txn.categoryId) : "NONE",
     })
     setIsFormOpen(true)
   }
 
   const submitTxn = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (!form.accountId) {
+      addToast("Selecione uma conta para a transacao.", "error")
+      return
+    }
     try {
       const payload = {
         accountId: Number(form.accountId),
@@ -143,7 +147,7 @@ export default function TransactionsPage() {
         description: form.description,
         occurredAt: toIsoDateTime(form.occurredAt),
         status: form.status,
-        categoryId: form.categoryId ? Number(form.categoryId) : null,
+        categoryId: form.categoryId && form.categoryId !== "NONE" ? Number(form.categoryId) : null,
       }
       if (editing) {
         await apiClient.patch(`/api/txns/${editing.id}`, payload)
@@ -174,6 +178,10 @@ export default function TransactionsPage() {
 
   const submitTransfer = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (!transferForm.fromAccountId || !transferForm.toAccountId) {
+      addToast("Selecione as contas de origem e destino.", "error")
+      return
+    }
     if (transferForm.fromAccountId === transferForm.toAccountId) {
       addToast("As contas de origem e destino devem ser diferentes.", "error")
       return
@@ -201,7 +209,7 @@ export default function TransactionsPage() {
     try {
       const payload = {
         month: filters.month,
-        accountId: filters.accountId ? Number(filters.accountId) : null,
+        accountId: filters.accountId && filters.accountId !== "ALL" ? Number(filters.accountId) : null,
         onlyUncategorized: true,
         dryRun: false,
         overrideManual: false,
@@ -252,12 +260,15 @@ export default function TransactionsPage() {
             </div>
             <div className="space-y-2">
               <Label>Conta</Label>
-              <Select value={filters.accountId} onValueChange={(v) => setFilters((prev) => ({ ...prev, accountId: v }))}>
+              <Select
+                value={filters.accountId}
+                onValueChange={(v) => setFilters((prev) => ({ ...prev, accountId: v }))}
+              >
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="ALL">Todas</SelectItem>
                   {accounts.map((a) => (
                     <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
                   ))}
@@ -266,12 +277,15 @@ export default function TransactionsPage() {
             </div>
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <Select value={filters.categoryId} onValueChange={(v) => setFilters((prev) => ({ ...prev, categoryId: v }))}>
+              <Select
+                value={filters.categoryId}
+                onValueChange={(v) => setFilters((prev) => ({ ...prev, categoryId: v }))}
+              >
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="ALL">Todas</SelectItem>
                   {categories.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                   ))}
@@ -289,12 +303,15 @@ export default function TransactionsPage() {
             </div>
             <div className="space-y-2">
               <Label>Direcao</Label>
-              <Select value={filters.direction} onValueChange={(v) => setFilters((prev) => ({ ...prev, direction: v }))}>
+              <Select
+                value={filters.direction}
+                onValueChange={(v) => setFilters((prev) => ({ ...prev, direction: v }))}
+              >
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="ALL">Todas</SelectItem>
                   <SelectItem value="IN">Entrada</SelectItem>
                   <SelectItem value="OUT">Saida</SelectItem>
                 </SelectContent>
@@ -302,12 +319,15 @@ export default function TransactionsPage() {
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={filters.status} onValueChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}>
+              <Select
+                value={filters.status}
+                onValueChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
+              >
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="ALL">Todos</SelectItem>
                   <SelectItem value="CLEARED">Cleared</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
                 </SelectContent>
@@ -463,16 +483,16 @@ export default function TransactionsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Categoria</Label>
-                <Select value={form.categoryId} onValueChange={(v) => setForm((prev) => ({ ...prev, categoryId: v }))}>
-                  <SelectTrigger className="bg-input border-border">
-                    <SelectValue placeholder="Sem categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Sem categoria</SelectItem>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+              <Select value={form.categoryId} onValueChange={(v) => setForm((prev) => ({ ...prev, categoryId: v }))}>
+                <SelectTrigger className="bg-input border-border">
+                  <SelectValue placeholder="Sem categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">Sem categoria</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
