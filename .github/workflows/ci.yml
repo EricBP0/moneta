@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Check Docker availability
+        id: docker
+        run: docker info
+        continue-on-error: true
+
+      - name: Run unit tests (no Docker)
+        if: steps.docker.outcome != 'success'
+        run: mvn -B -f backend/pom.xml test
+
+      - name: Run unit and integration tests (Docker available)
+        if: steps.docker.outcome == 'success'
+        run: mvn -B -f backend/pom.xml -Pit verify

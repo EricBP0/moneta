@@ -25,14 +25,16 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
+@Tag("integration")
 @Transactional
-class ImportServiceTest extends PostgresContainerTest {
+class ImportServiceIT extends PostgresContainerTest {
   @Autowired
   private ImportService importService;
 
