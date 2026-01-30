@@ -1,3 +1,5 @@
+import { getApiUrl } from './api'
+
 const accessTokenKey = 'accessToken'
 const refreshTokenKey = 'refreshToken'
 
@@ -95,7 +97,7 @@ const refreshSession = async (): Promise<AuthResponse> => {
       // Erro mais descritivo quando o refresh token não está disponível
       throw new Error('Refresh token ausente. Não foi possível atualizar a sessão.')
     }
-    const response = await fetch('/api/auth/refresh', {
+    const response = await fetch(getApiUrl('/api/auth/refresh'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -122,7 +124,7 @@ const request = async <T>(method: string, path: string, body?: unknown, options:
     headers: buildHeaders(options, method, body !== undefined),
     body: options.isForm ? (body as BodyInit) : body !== undefined ? JSON.stringify(body) : undefined
   }
-  const response = await fetch(path, config)
+  const response = await fetch(getApiUrl(path), config)
   if (response.status === 401 && !options.skipRefresh && !options._retry) {
     try {
       if (!refreshPromise) {
