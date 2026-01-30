@@ -26,10 +26,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DashboardService {
+  private static final Logger logger = LoggerFactory.getLogger(DashboardService.class);
+
   private final TxnRepository txnRepository;
   private final CategoryRepository categoryRepository;
   private final BudgetRepository budgetRepository;
@@ -80,7 +84,20 @@ public class DashboardService {
 
     List<Budget> budgets = budgetRepository.findAllByUserIdAndMonthRef(userId, monthRef);
     List<Alert> alerts = alertRepository.findAllByUserIdAndMonthRef(userId, monthRef);
-    Map<Long, List<AlertType>> alertMap = alerts.stream()
+    
+    // Filter out alerts with null budgetId (e.g., goal-related alerts)
+    long totalAlerts = alerts.size();
+    List<Alert> alertsWithBudgetId = alerts.stream()
+      .filter(alert -> alert.getBudgetId() != null)
+      .toList();
+    
+    long filteredCount = totalAlerts - alertsWithBudgetId.size();
+    if (filteredCount > 0) {
+      logger.debug("Filtered {} alerts with null budgetId for user {} in month {}", 
+        filteredCount, userId, monthRef);
+    }
+    
+    Map<Long, List<AlertType>> alertMap = alertsWithBudgetId.stream()
       .collect(Collectors.groupingBy(Alert::getBudgetId, Collectors.mapping(Alert::getType, Collectors.toList())));
 
     List<BudgetStatus> budgetStatuses = new ArrayList<>();

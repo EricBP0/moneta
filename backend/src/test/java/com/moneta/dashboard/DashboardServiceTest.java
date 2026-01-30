@@ -148,4 +148,58 @@ class DashboardServiceTest {
     assertThat(response.alerts()).hasSize(1);
     assertThat(response.goalsSummary()).hasSize(1);
   }
+
+  @Test
+  void handlesAlertsWithNullBudgetIdGracefully() {
+    when(txnRepository.findMonthlyTotals(1L, "2024-08")).thenReturn(new MonthlyTotalsProjection() {
+      @Override
+      public Long getIncomeCents() {
+        return 10000L;
+      }
+
+      @Override
+      public Long getExpenseCents() {
+        return 4000L;
+      }
+    });
+
+    when(txnRepository.findCategoryExpenses(1L, "2024-08")).thenReturn(List.of());
+    when(categoryRepository.findAllByUserIdAndIsActiveTrue(1L)).thenReturn(List.of());
+
+    Budget budget = org.mockito.Mockito.mock(Budget.class);
+    when(budget.getId()).thenReturn(55L);
+    when(budget.getCategoryId()).thenReturn(10L);
+    when(budget.getSubcategoryId()).thenReturn(null);
+    when(budget.getMonthRef()).thenReturn("2024-08");
+    when(budget.getLimitCents()).thenReturn(5000L);
+    when(budgetRepository.findAllByUserIdAndMonthRef(1L, "2024-08")).thenReturn(List.of(budget));
+    when(budgetCalculator.calculateConsumption(1L, "2024-08", 10L, null)).thenReturn(4000L);
+
+    // Create alerts with null budgetId (e.g., goal-related alerts)
+    Alert alertWithNullBudgetId = new Alert();
+    alertWithNullBudgetId.setBudgetId(null);
+    alertWithNullBudgetId.setType(AlertType.GOAL_BEHIND);
+    alertWithNullBudgetId.setMessage("Goal behind schedule");
+    alertWithNullBudgetId.setRead(false);
+
+    Alert alertWithBudgetId = new Alert();
+    alertWithBudgetId.setBudgetId(55L);
+    alertWithBudgetId.setType(AlertType.BUDGET_80);
+    alertWithBudgetId.setMessage("Budget 80%");
+    alertWithBudgetId.setRead(false);
+
+    when(alertRepository.findAllByUserIdAndMonthRef(1L, "2024-08"))
+      .thenReturn(List.of(alertWithNullBudgetId, alertWithBudgetId));
+
+    when(goalRepository.findAllByUserId(1L)).thenReturn(List.of());
+
+    // Should not throw NPE
+    var response = dashboardService.getMonthly(1L, "2024-08");
+
+    // Verify response is valid
+    assertThat(response).isNotNull();
+    assertThat(response.alerts()).hasSize(2);
+    assertThat(response.budgetStatus()).hasSize(1);
+    assertThat(response.budgetStatus().get(0).triggered80()).isTrue();
+  }
 }

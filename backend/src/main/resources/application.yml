@@ -19,3 +19,9 @@ app:
     secret: ${JWT_SECRET:dev-secret-change-me}
     access-token-ttl-minutes: ${JWT_ACCESS_TTL_MINUTES:60}
     refresh-token-ttl-days: ${JWT_REFRESH_TTL_DAYS:30}
+logging:
+  level:
+    org.springframework.security: ${SECURITY_LOG_LEVEL:INFO}
+    org.springframework.web.cors: ${CORS_LOG_LEVEL:INFO}
+    com.moneta.config: ${APP_CONFIG_LOG_LEVEL:INFO}
+
