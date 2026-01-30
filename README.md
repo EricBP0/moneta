@@ -24,25 +24,25 @@ docker compose -f docker-compose.dev.yml up -d postgres
 ```
 
 ### Backend tests (Testcontainers)
-Os testes de integração usam Testcontainers, então é necessário ter Docker disponível para executá-los. Os testes
-unitários rodam sem Docker.
+Integration tests use Testcontainers, so Docker must be available to run them. Unit tests run without Docker.
 
 ## CI/CD (Backend)
 
 ### GitHub Actions workflows
-- **CI** (`.github/workflows/ci.yml`): roda testes unitários sempre e testes de integração (Testcontainers) apenas quando o Docker está disponível no runner.
-- **Deploy** (`.github/workflows/deploy.yml`): no push para `main`, conecta via SSH na VM e faz deploy via Docker Compose, com healthcheck pós-deploy.
+- **CI** (`.github/workflows/ci.yml`): runs unit tests always and integration tests (Testcontainers) only when Docker is available on the runner.
+- **Deploy** (`.github/workflows/deploy.yml`): on push to `main`, connects via SSH to the VM and deploys via Docker Compose, with post-deploy healthcheck.
 
-### Secrets necessários no GitHub
-Configure os seguintes secrets no repositório (Settings → Secrets and variables → Actions):
-- `VM_HOST`: IP público da VM.
-- `VM_USER`: usuário SSH (ex: `ubuntu`).
-- `VM_SSH_KEY`: conteúdo da chave privada.
-- `VM_SSH_PORT`: porta SSH (ex: `22`).
-- `VM_DEPLOY_PATH`: caminho do repo na VM (ex: `/home/ubuntu/moneta/moneta`).
+### Required GitHub Secrets
+Configure the following secrets in the repository (Settings → Secrets and variables → Actions):
+- `VM_HOST`: Public IP of the VM.
+- `VM_USER`: SSH user (e.g., `ubuntu`).
+- `VM_SSH_KEY`: Private key content.
+- `VM_HOST_KEY`: Pinned host key line from known_hosts (e.g., output from `ssh-keyscan -H -p 22 <VM_HOST>`).
+- `VM_SSH_PORT`: SSH port (e.g., `22`).
+- `VM_DEPLOY_PATH`: Repository path on the VM (e.g., `/home/ubuntu/moneta/moneta`).
 
-### Deploy manual na VM
-Caso precise executar manualmente na VM:
+### Manual deploy on the VM
+If you need to run manually on the VM:
 ```bash
 cd /home/ubuntu/moneta/moneta
 git fetch origin main
@@ -52,13 +52,13 @@ docker compose up -d --build
 curl -fsS http://localhost:8080/actuator/health
 ```
 
-### Rodando o CI localmente
-Testes unitários (sempre):
+### Running CI locally
+Unit tests (always):
 ```bash
 mvn -B -f backend/pom.xml test
 ```
 
-Testes de integração (Testcontainers, requer Docker):
+Integration tests (Testcontainers, requires Docker):
 ```bash
 mvn -B -f backend/pom.xml -Pit verify
 ```

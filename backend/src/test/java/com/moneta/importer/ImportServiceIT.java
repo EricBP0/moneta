@@ -34,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Tag("integration")
 @Transactional
-class ImportServiceTest extends PostgresContainerTest {
+class ImportServiceIT extends PostgresContainerTest {
   @Autowired
   private ImportService importService;
 
