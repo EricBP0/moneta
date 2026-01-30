@@ -41,8 +41,8 @@ const defaultForm = {
   priority: "0",
   matchType: "CONTAINS",
   pattern: "",
-  categoryId: undefined as string | undefined,
-  accountId: undefined as string | undefined,
+  categoryId: "NONE" as string,
+  accountId: "ALL" as string,
   isActive: true,
 }
 

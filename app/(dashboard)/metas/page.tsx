@@ -212,7 +212,10 @@ export default function GoalsPage() {
                   </div>
                   {goal.targetDate && (
                     <p className="text-xs text-muted-foreground">
-                      Prazo: {goal.targetDate.split("-").reverse().join("/")}
+                      Prazo: {(() => {
+                        const [year, month] = goal.targetDate.split("-")
+                        return `${month}/${year}`
+                      })()}
                     </p>
                   )}
                   <Button variant="outline" size="sm" className="w-full" onClick={() => openDeposit(goal.id)}>
@@ -272,7 +275,6 @@ export default function GoalsPage() {
                 type="month"
                 value={form.targetDate}
                 onChange={(e) => setForm((prev) => ({ ...prev, targetDate: e.target.value }))}
-                required
                 className="bg-input border-border"
               />
             </div>
