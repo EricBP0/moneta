@@ -39,17 +39,36 @@ export function Sidebar() {
   const pathname = usePathname()
   const { isOpen, toggle } = useSidebar()
   const [collapsed, setCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   
-  // Close mobile sidebar on desktop
+  // Track viewport size reactively
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024 && isOpen) {
+      const mobile = window.innerWidth < 1024
+      setIsMobile(mobile)
+      // Close mobile sidebar when resizing to desktop
+      if (!mobile && isOpen) {
         toggle()
       }
     }
+    
+    // Set initial state
+    handleResize()
+    
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [isOpen, toggle])
+
+  const handleOverlayClick = () => {
+    toggle()
+  }
+  
+  const handleOverlayKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      toggle()
+    }
+  }
 
   return (
     <>
@@ -57,7 +76,11 @@ export function Sidebar() {
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={toggle}
+          role="button"
+          aria-label="Close menu"
+          tabIndex={0}
+          onClick={handleOverlayClick}
+          onKeyDown={handleOverlayKeyDown}
         />
       )}
       
@@ -116,7 +139,7 @@ export function Sidebar() {
                   href={item.href}
                   onClick={() => {
                     // Close mobile sidebar when navigating
-                    if (window.innerWidth < 1024 && isOpen) {
+                    if (isMobile && isOpen) {
                       toggle()
                     }
                   }}

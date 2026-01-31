@@ -160,6 +160,7 @@ export default function BudgetsPage() {
                 <Label>Limite</Label>
                 <Input
                   type="text"
+                  inputMode="decimal"
                   value={form.limitCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, limitCents: e.target.value }))}
                   placeholder="0,00"

@@ -257,6 +257,7 @@ export default function GoalsPage() {
                 <Label>Valor objetivo</Label>
                 <Input
                   type="text"
+                  inputMode="decimal"
                   value={form.targetAmountCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, targetAmountCents: e.target.value }))}
                   placeholder="0,00"
@@ -268,6 +269,7 @@ export default function GoalsPage() {
                 <Label>Valor atual</Label>
                 <Input
                   type="text"
+                  inputMode="decimal"
                   value={form.currentAmountCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, currentAmountCents: e.target.value }))}
                   placeholder="0,00"
@@ -304,6 +306,7 @@ export default function GoalsPage() {
               <Label>Valor</Label>
               <Input
                 type="text"
+                inputMode="decimal"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
                 placeholder="0,00"

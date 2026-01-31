@@ -78,16 +78,6 @@ export function DateRangePicker({
 }: DateRangePickerProps) {
   const [showCalendar, setShowCalendar] = React.useState<'from' | 'to' | null>(null)
 
-  const formatRange = () => {
-    if (from && to) {
-      return `${format(from, "dd/MM/yyyy", { locale: ptBR })} - ${format(to, "dd/MM/yyyy", { locale: ptBR })}`
-    }
-    if (from) {
-      return `${format(from, "dd/MM/yyyy", { locale: ptBR })} - ...`
-    }
-    return placeholder
-  }
-
   return (
     <div className={cn("flex gap-2", className)}>
       <Popover open={showCalendar === 'from'} onOpenChange={(open) => setShowCalendar(open ? 'from' : null)}>

@@ -186,6 +186,7 @@ export default function AccountsPage() {
                 <Label>Saldo inicial</Label>
                 <Input
                   type="text"
+                  inputMode="decimal"
                   value={form.initialBalanceCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, initialBalanceCents: e.target.value }))}
                   placeholder="0,00"

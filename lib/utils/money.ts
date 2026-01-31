@@ -48,6 +48,8 @@ export function parseMoneyToCents(value: string | number): number {
   // Parse as float and convert to cents
   const floatValue = parseFloat(cleanValue)
   
+  // Return 0 for invalid input to prevent form submission errors
+  // Form-level validation should catch invalid inputs before submission
   if (isNaN(floatValue)) {
     return 0
   }
@@ -80,7 +82,7 @@ export function formatCentsToMoney(
 /**
  * Formats cents to a plain number string for input fields
  * @param cents - The value in cents
- * @returns Plain number string (e.g., "1234.56")
+ * @returns Plain number string in Brazilian format (e.g., "1234,56")
  */
 export function formatCentsToInput(cents: number | null | undefined): string {
   if (cents === null || cents === undefined || isNaN(cents)) {

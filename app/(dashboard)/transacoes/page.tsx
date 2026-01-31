@@ -532,6 +532,7 @@ export default function TransactionsPage() {
                 <Label>Valor</Label>
                 <Input
                   type="text"
+                  inputMode="decimal"
                   value={form.amountCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, amountCents: e.target.value }))}
                   placeholder="0,00"
@@ -646,6 +647,7 @@ export default function TransactionsPage() {
               <Label>Valor</Label>
               <Input
                 type="text"
+                inputMode="decimal"
                 value={transferForm.amountCents}
                 onChange={(e) => setTransferForm((prev) => ({ ...prev, amountCents: e.target.value }))}
                 placeholder="0,00"

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, createContext, useContext } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useRouter } from "next/navigation"
 import { AuthProvider, useAuth } from "@/contexts/auth-context"
 import { ToastProvider } from "@/contexts/toast-context"
@@ -56,12 +56,20 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  
+  // Memoize toggle function to prevent unnecessary re-renders
+  const toggle = useCallback(() => setSidebarOpen(prev => !prev), [])
+  
+  const contextValue = useMemo(() => ({
+    isOpen: sidebarOpen,
+    toggle
+  }), [sidebarOpen, toggle])
 
   return (
     <AuthProvider>
       <ToastProvider>
         <AuthGuard>
-          <SidebarContext.Provider value={{ isOpen: sidebarOpen, toggle: () => setSidebarOpen(!sidebarOpen) }}>
+          <SidebarContext.Provider value={contextValue}>
             <div className="flex h-screen bg-background overflow-hidden">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden w-full lg:w-auto">
