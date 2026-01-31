@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { useSidebar } from "@/app/(dashboard)/layout"
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -19,7 +20,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -36,15 +37,42 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { isOpen, toggle } = useSidebar()
   const [collapsed, setCollapsed] = useState(false)
+  
+  // Close mobile sidebar on desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && isOpen) {
+        toggle()
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [isOpen, toggle])
 
   return (
-    <aside
-      className={cn(
-        "flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={toggle}
+        />
       )}
-    >
+      
+      <aside
+        className={cn(
+          "flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 z-50",
+          "fixed lg:relative",
+          // Mobile: show/hide based on isOpen
+          "lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          // Desktop: collapse functionality
+          collapsed && "lg:w-16",
+          !collapsed && "w-64"
+        )}
+      >
       <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
         {!collapsed && (
           <div className="flex flex-col">
@@ -86,6 +114,12 @@ export function Sidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  onClick={() => {
+                    // Close mobile sidebar when navigating
+                    if (window.innerWidth < 1024 && isOpen) {
+                      toggle()
+                    }
+                  }}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                     isActive
