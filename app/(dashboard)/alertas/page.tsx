@@ -46,7 +46,7 @@ export default function AlertsPage() {
     )
 
     try {
-      await apiClient.patch(`/api/alerts/${alertId}/read`, {})
+      await apiClient.patch(`/api/alerts/${alertId}`, { isRead: true })
       addToast("Alerta marcado como lido.", "success")
     } catch (err) {
       // Revert on error
@@ -62,13 +62,26 @@ export default function AlertsPage() {
     setAlerts(prevAlerts => prevAlerts.map(a => ({ ...a, isRead: true })))
 
     try {
-      await apiClient.patch("/api/alerts/read-all", {})
+      const unreadAlerts = previousAlerts.filter(alert => !alert.isRead)
+      if (unreadAlerts.length > 0) {
+        // Process in chunks to avoid overwhelming the server with parallel requests
+        // Chunk size of 5 balances between performance and server load
+        const CHUNK_SIZE = 5
+        for (let chunkStart = 0; chunkStart < unreadAlerts.length; chunkStart += CHUNK_SIZE) {
+          const chunk = unreadAlerts.slice(chunkStart, chunkStart + CHUNK_SIZE)
+          await Promise.all(
+            chunk.map(alert => apiClient.patch(`/api/alerts/${alert.id}`, { isRead: true }))
+          )
+        }
+      }
       addToast("Todos alertas marcados como lidos.", "success")
     } catch (err) {
-      // Revert on error
-      setAlerts(previousAlerts)
       const message = err instanceof Error ? err.message : "Erro ao marcar alertas"
       addToast(message, "error")
+    } finally {
+      // Always reload alerts from server to ensure UI is in sync
+      // Some PATCH calls may have succeeded even if others failed
+      await loadAlerts()
     }
   }
 
@@ -76,6 +89,17 @@ export default function AlertsPage() {
     if (type.includes("100")) return <AlertCircle className="h-5 w-5 text-destructive" />
     if (type.includes("80")) return <AlertTriangle className="h-5 w-5 text-yellow-500" />
     return <Bell className="h-5 w-5 text-primary" />
+  }
+
+  const getAlertTitle = (alert: Alert) => {
+    const message = alert.message?.trim()
+    return message ? message : getAlertTypeLabel(alert.type)
+  }
+
+  const shouldShowTypeBadge = (alert: Alert) => {
+    // Hide badge if title is already showing the type label (to avoid duplication)
+    const message = alert.message?.trim()
+    return !!message
   }
 
   const unreadCount = alerts.filter((a) => !a.isRead).length
@@ -130,11 +154,15 @@ export default function AlertsPage() {
                       {getIcon(alert.type)}
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{getAlertTypeLabel(alert.type)}</p>
-                      <p className="text-sm text-muted-foreground">{alert.message}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(alert.triggeredAt).toLocaleString("pt-BR")}
-                      </p>
+                      <p className="font-medium text-foreground">{getAlertTitle(alert)}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        {shouldShowTypeBadge(alert) && (
+                          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+                            {getAlertTypeLabel(alert.type)}
+                          </span>
+                        )}
+                        <span>{new Date(alert.triggeredAt).toLocaleString("pt-BR")}</span>
+                      </div>
                     </div>
                   </div>
                   {!alert.isRead && (
