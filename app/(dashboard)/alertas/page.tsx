@@ -96,7 +96,7 @@ export default function AlertsPage() {
   const shouldShowTypeBadge = (alert: Alert) => {
     // Hide badge if title is already showing the type label (to avoid duplication)
     const message = alert.message?.trim()
-    return message !== ""
+    return !!message
   }
 
   const unreadCount = alerts.filter((a) => !a.isRead).length
