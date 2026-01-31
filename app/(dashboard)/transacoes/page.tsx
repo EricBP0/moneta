@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { apiClient } from "@/lib/api-client"
 import { formatCents, monthToday, toIsoDateTime } from "@/lib/format"
+import { parseMoneyToCents, formatCentsToInput } from "@/lib/utils/money"
+import { TRANSACTION_STATUS_OPTIONS, getTransactionStatusLabel } from "@/lib/constants/labels"
 import { useAppToast } from "@/contexts/toast-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -124,7 +126,7 @@ export default function TransactionsPage() {
     setEditing(txn)
     setForm({
       accountId: String(txn.accountId),
-      amountCents: String(txn.amountCents || ""),
+      amountCents: formatCentsToInput(txn.amountCents),
       direction: txn.direction,
       description: txn.description || "",
       occurredAt: txn.occurredAt ? new Date(txn.occurredAt).toISOString().slice(0, 16) : "",
@@ -143,7 +145,7 @@ export default function TransactionsPage() {
     try {
       const payload = {
         accountId: Number(form.accountId),
-        amountCents: Number(form.amountCents),
+        amountCents: parseMoneyToCents(form.amountCents),
         direction: form.direction,
         description: form.description,
         occurredAt: toIsoDateTime(form.occurredAt),
@@ -191,7 +193,7 @@ export default function TransactionsPage() {
       const payload = {
         fromAccountId: Number(transferForm.fromAccountId),
         toAccountId: Number(transferForm.toAccountId),
-        amountCents: Number(transferForm.amountCents),
+        amountCents: parseMoneyToCents(transferForm.amountCents),
         occurredAt: toIsoDateTime(transferForm.occurredAt),
         description: transferForm.description,
       }
@@ -329,8 +331,11 @@ export default function TransactionsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Todos</SelectItem>
-                  <SelectItem value="CLEARED">Cleared</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
+                  {TRANSACTION_STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -359,76 +364,145 @@ export default function TransactionsPage() {
           ) : txns.length === 0 ? (
             <p className="text-muted-foreground text-sm">Nenhuma transacao encontrada.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-border">
-                    <TableHead>Data</TableHead>
-                    <TableHead>Conta</TableHead>
-                    <TableHead>Descricao</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Direcao</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead className="w-24"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {txns.map((txn) => {
-                    const category = txn.categoryId ? categories.find((c) => c.id === txn.categoryId) : null;
-                    return (
-                      <TableRow key={txn.id} className="border-border">
-                        <TableCell>{new Date(txn.occurredAt).toLocaleDateString("pt-BR")}</TableCell>
-                        <TableCell>{accounts.find((a) => a.id === txn.accountId)?.name || txn.accountId}</TableCell>
-                        <TableCell>{txn.description || "—"}</TableCell>
-                        <TableCell>
-                          {category ? (
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-3 h-3 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: category.color || "#6b7280" }}
-                              />
-                              <span>{category.name || "—"}</span>
+            <>
+              {/* Desktop table view */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border">
+                      <TableHead>Data</TableHead>
+                      <TableHead>Conta</TableHead>
+                      <TableHead>Descricao</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Direcao</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="w-24"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {txns.map((txn) => {
+                      const category = txn.categoryId ? categories.find((c) => c.id === txn.categoryId) : null;
+                      return (
+                        <TableRow key={txn.id} className="border-border">
+                          <TableCell>{new Date(txn.occurredAt).toLocaleDateString("pt-BR")}</TableCell>
+                          <TableCell>{accounts.find((a) => a.id === txn.accountId)?.name || txn.accountId}</TableCell>
+                          <TableCell>{txn.description || "—"}</TableCell>
+                          <TableCell>
+                            {category ? (
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: category.color || "#6b7280" }}
+                                />
+                                <span>{category.name || "—"}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              txn.direction === "IN" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
+                            }`}>
+                              {txn.direction === "IN" ? "Entrada" : "Saida"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              txn.status === "CLEARED" ? "bg-primary/10 text-primary" : "bg-yellow-500/10 text-yellow-500"
+                            }`}>
+                              {getTransactionStatusLabel(txn.status)}
+                            </span>
+                          </TableCell>
+                          <TableCell className={`text-right font-medium ${
+                            txn.direction === "IN" ? "text-primary" : "text-destructive"
+                          }`}>
+                            {txn.direction === "IN" ? "+" : "-"}{formatCents(txn.amountCents)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(txn)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => deleteTxn(txn.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            txn.direction === "IN" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
-                          }`}>
-                            {txn.direction === "IN" ? "Entrada" : "Saida"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            txn.status === "CLEARED" ? "bg-primary/10 text-primary" : "bg-yellow-500/10 text-yellow-500"
-                          }`}>
-                            {txn.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className={`text-right font-medium ${
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Mobile card view */}
+              <div className="md:hidden space-y-3">
+                {txns.map((txn) => {
+                  const category = txn.categoryId ? categories.find((c) => c.id === txn.categoryId) : null;
+                  const account = accounts.find((a) => a.id === txn.accountId);
+                  return (
+                    <div
+                      key={txn.id}
+                      className="p-4 rounded-lg bg-secondary/50 border border-border space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate">
+                            {txn.description || "Sem descrição"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {account?.name || "—"}
+                          </p>
+                        </div>
+                        <div className={`text-right font-bold ${
                           txn.direction === "IN" ? "text-primary" : "text-destructive"
                         }`}>
                           {txn.direction === "IN" ? "+" : "-"}{formatCents(txn.amountCents)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(txn)}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => deleteTxn(txn.id)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="text-muted-foreground">
+                          {new Date(txn.occurredAt).toLocaleDateString("pt-BR")}
+                        </span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${
+                          txn.direction === "IN" ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
+                        }`}>
+                          {txn.direction === "IN" ? "Entrada" : "Saida"}
+                        </span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${
+                          txn.status === "CLEARED" ? "bg-primary/10 text-primary" : "bg-yellow-500/10 text-yellow-500"
+                        }`}>
+                          {getTransactionStatusLabel(txn.status)}
+                        </span>
+                      </div>
+                      
+                      {category && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: category.color || "#6b7280" }}
+                          />
+                          <span className="text-muted-foreground">{category.name}</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-2 pt-2 border-t border-border">
+                        <Button variant="outline" size="sm" onClick={() => openEdit(txn)} className="flex-1">
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => deleteTxn(txn.id)} className="text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -455,12 +529,13 @@ export default function TransactionsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Valor (centavos)</Label>
+                <Label>Valor</Label>
                 <Input
-                  type="number"
-                  min="1"
+                  type="text"
+                  inputMode="decimal"
                   value={form.amountCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, amountCents: e.target.value }))}
+                  placeholder="0,00"
                   required
                   className="bg-input border-border"
                 />
@@ -518,8 +593,11 @@ export default function TransactionsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CLEARED">Cleared</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
+                    {TRANSACTION_STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -566,12 +644,13 @@ export default function TransactionsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Valor (centavos)</Label>
+              <Label>Valor</Label>
               <Input
-                type="number"
-                min="1"
+                type="text"
+                inputMode="decimal"
                 value={transferForm.amountCents}
                 onChange={(e) => setTransferForm((prev) => ({ ...prev, amountCents: e.target.value }))}
+                placeholder="0,00"
                 required
                 className="bg-input border-border"
               />

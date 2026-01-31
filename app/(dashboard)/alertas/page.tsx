@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { apiClient } from "@/lib/api-client"
 import { useAppToast } from "@/contexts/toast-context"
+import { getAlertTypeLabel } from "@/lib/constants/labels"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -38,22 +39,35 @@ export default function AlertsPage() {
   }, [loadAlerts])
 
   const markAsRead = async (alertId: number) => {
+    // Optimistic update
+    const previousAlerts = [...alerts]
+    setAlerts(prevAlerts => 
+      prevAlerts.map(a => a.id === alertId ? { ...a, isRead: true } : a)
+    )
+
     try {
       await apiClient.patch(`/api/alerts/${alertId}/read`, {})
-      loadAlerts()
+      addToast("Alerta marcado como lido.", "success")
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro"
+      // Revert on error
+      setAlerts(previousAlerts)
+      const message = err instanceof Error ? err.message : "Erro ao marcar alerta"
       addToast(message, "error")
     }
   }
 
   const markAllAsRead = async () => {
+    // Optimistic update
+    const previousAlerts = [...alerts]
+    setAlerts(prevAlerts => prevAlerts.map(a => ({ ...a, isRead: true })))
+
     try {
       await apiClient.patch("/api/alerts/read-all", {})
       addToast("Todos alertas marcados como lidos.", "success")
-      loadAlerts()
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro"
+      // Revert on error
+      setAlerts(previousAlerts)
+      const message = err instanceof Error ? err.message : "Erro ao marcar alertas"
       addToast(message, "error")
     }
   }
@@ -116,7 +130,7 @@ export default function AlertsPage() {
                       {getIcon(alert.type)}
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{alert.type}</p>
+                      <p className="font-medium text-foreground">{getAlertTypeLabel(alert.type)}</p>
                       <p className="text-sm text-muted-foreground">{alert.message}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {new Date(alert.triggeredAt).toLocaleString("pt-BR")}

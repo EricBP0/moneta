@@ -136,7 +136,9 @@ const request = async <T>(method: string, path: string, body?: unknown, options:
       return request<T>(method, path, body, { ...options, _retry: true })
     } catch {
       clearSession()
-      if (typeof window !== 'undefined') {
+      // Auto-logout on 401: clear session and redirect to login
+      // Avoid loop by checking if already on login page
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
         window.location.assign('/login')
       }
       throw new Error('Session expired')

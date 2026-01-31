@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { useSidebar } from "@/app/(dashboard)/layout"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -12,11 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut } from "lucide-react"
+import { LogOut, Menu } from "lucide-react"
 
 export function Topbar() {
   const router = useRouter()
   const { user, logout } = useAuth()
+  const { toggle } = useSidebar()
 
   const handleLogout = () => {
     logout()
@@ -31,9 +33,17 @@ export function Topbar() {
     .slice(0, 2) || "U"
 
   return (
-    <header className="flex items-center justify-between h-16 px-6 bg-card border-b border-border">
+    <header className="flex items-center justify-between h-16 px-4 sm:px-6 bg-card border-b border-border">
       <div className="flex items-center gap-4">
-        <h2 className="text-lg font-semibold text-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
+          onClick={toggle}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <h2 className="text-base sm:text-lg font-semibold text-foreground">
           Olá, {user?.name?.split(" ")[0] || "Usuário"}
         </h2>
       </div>

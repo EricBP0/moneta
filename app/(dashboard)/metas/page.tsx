@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { apiClient } from "@/lib/api-client"
 import { formatCents, formatPercent } from "@/lib/format"
+import { parseMoneyToCents, formatCentsToInput } from "@/lib/utils/money"
 import { useAppToast } from "@/contexts/toast-context"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -74,8 +75,8 @@ export default function GoalsPage() {
     setEditing(goal)
     setForm({
       name: goal.name,
-      targetAmountCents: String(goal.targetAmountCents),
-      currentAmountCents: String(goal.currentAmountCents),
+      targetAmountCents: formatCentsToInput(goal.targetAmountCents),
+      currentAmountCents: formatCentsToInput(goal.currentAmountCents),
       targetDate: goal.targetDate ?? "",
     })
     setIsFormOpen(true)
@@ -90,8 +91,8 @@ export default function GoalsPage() {
     try {
       const payload = {
         name: form.name,
-        targetAmountCents: Number(form.targetAmountCents),
-        currentAmountCents: Number(form.currentAmountCents),
+        targetAmountCents: parseMoneyToCents(form.targetAmountCents),
+        currentAmountCents: parseMoneyToCents(form.currentAmountCents),
         targetDate: form.targetDate,
       }
       if (editing) {
@@ -132,7 +133,7 @@ export default function GoalsPage() {
     if (!depositGoalId) return
     try {
       await apiClient.post(`/api/goals/${depositGoalId}/deposit`, {
-        amountCents: Number(depositAmount),
+        amountCents: parseMoneyToCents(depositAmount),
       })
       addToast("Deposito registrado.", "success")
       setDepositOpen(false)
@@ -253,23 +254,25 @@ export default function GoalsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Valor objetivo (centavos)</Label>
+                <Label>Valor objetivo</Label>
                 <Input
-                  type="number"
-                  min="1"
+                  type="text"
+                  inputMode="decimal"
                   value={form.targetAmountCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, targetAmountCents: e.target.value }))}
+                  placeholder="0,00"
                   required
                   className="bg-input border-border"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Valor atual (centavos)</Label>
+                <Label>Valor atual</Label>
                 <Input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={form.currentAmountCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, currentAmountCents: e.target.value }))}
+                  placeholder="0,00"
                   required
                   className="bg-input border-border"
                 />
@@ -300,12 +303,13 @@ export default function GoalsPage() {
           </DialogHeader>
           <form onSubmit={submitDeposit} className="space-y-4">
             <div className="space-y-2">
-              <Label>Valor (centavos)</Label>
+              <Label>Valor</Label>
               <Input
-                type="number"
-                min="1"
+                type="text"
+                inputMode="decimal"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
+                placeholder="0,00"
                 required
                 className="bg-input border-border"
               />

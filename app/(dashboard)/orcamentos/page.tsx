@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { apiClient } from "@/lib/api-client"
 import { formatCents, formatPercent, monthToday } from "@/lib/format"
+import { parseMoneyToCents } from "@/lib/utils/money"
 import { useAppToast } from "@/contexts/toast-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -76,7 +77,7 @@ export default function BudgetsPage() {
         monthRef: form.monthRef,
         categoryId: form.categoryId ? Number(form.categoryId) : null,
         subcategoryId: null,
-        limitCents: Number(form.limitCents),
+        limitCents: parseMoneyToCents(form.limitCents),
       }
       await apiClient.post("/api/budgets", payload)
       addToast("Orcamento criado.", "success")
@@ -156,12 +157,13 @@ export default function BudgetsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Limite (centavos)</Label>
+                <Label>Limite</Label>
                 <Input
-                  type="number"
-                  min="1"
+                  type="text"
+                  inputMode="decimal"
                   value={form.limitCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, limitCents: e.target.value }))}
+                  placeholder="0,00"
                   required
                   className="bg-input border-border"
                 />

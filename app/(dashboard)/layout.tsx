@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useRouter } from "next/navigation"
 import { AuthProvider, useAuth } from "@/contexts/auth-context"
 import { ToastProvider } from "@/contexts/toast-context"
@@ -8,6 +8,20 @@ import { Sidebar } from "@/components/layout/sidebar"
 import { Topbar } from "@/components/layout/topbar"
 import { hasStoredSession } from "@/lib/api-client"
 import { Loader2 } from "lucide-react"
+
+// Context for sidebar state
+const SidebarContext = createContext<{
+  isOpen: boolean
+  toggle: () => void
+} | null>(null)
+
+export const useSidebar = () => {
+  const context = useContext(SidebarContext)
+  if (!context) {
+    throw new Error('useSidebar must be used within SidebarProvider')
+  }
+  return context
+}
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -41,19 +55,31 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  
+  // Memoize toggle function to prevent unnecessary re-renders
+  const toggle = useCallback(() => setSidebarOpen(prev => !prev), [])
+  
+  const contextValue = useMemo(() => ({
+    isOpen: sidebarOpen,
+    toggle
+  }), [sidebarOpen, toggle])
+
   return (
     <AuthProvider>
       <ToastProvider>
         <AuthGuard>
-          <div className="flex h-screen bg-background">
-            <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <Topbar />
-              <main className="flex-1 overflow-y-auto p-6 scrollbar-thin">
-                {children}
-              </main>
+          <SidebarContext.Provider value={contextValue}>
+            <div className="flex h-screen bg-background overflow-hidden">
+              <Sidebar />
+              <div className="flex-1 flex flex-col overflow-hidden w-full lg:w-auto">
+                <Topbar />
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-thin">
+                  {children}
+                </main>
+              </div>
             </div>
-          </div>
+          </SidebarContext.Provider>
         </AuthGuard>
       </ToastProvider>
     </AuthProvider>

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { apiClient } from "@/lib/api-client"
 import { formatCents } from "@/lib/format"
+import { parseMoneyToCents, formatCentsToInput } from "@/lib/utils/money"
+import { ACCOUNT_TYPE_OPTIONS, CURRENCY_OPTIONS, getAccountTypeLabel, getCurrencyLabel } from "@/lib/constants/labels"
 import { useAppToast } from "@/contexts/toast-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -70,7 +72,7 @@ export default function AccountsPage() {
         name: form.name,
         type: form.type,
         currency: form.currency,
-        initialBalanceCents: Number(form.initialBalanceCents),
+        initialBalanceCents: parseMoneyToCents(form.initialBalanceCents),
         institutionId: form.institutionId && form.institutionId !== "NONE" ? Number(form.institutionId) : null,
       }
       if (editing) {
@@ -95,7 +97,7 @@ export default function AccountsPage() {
       name: account.name,
       type: account.type,
       currency: account.currency,
-      initialBalanceCents: String(account.initialBalanceCents),
+      initialBalanceCents: formatCentsToInput(account.initialBalanceCents),
       institutionId: account.institutionId ? String(account.institutionId) : "NONE",
     })
   }
@@ -146,29 +148,48 @@ export default function AccountsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <Input
+                <Select
                   value={form.type}
-                  onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))}
-                  required
-                  className="bg-input border-border"
-                />
+                  onValueChange={(v) => setForm((prev) => ({ ...prev, type: v }))}
+                >
+                  <SelectTrigger className="bg-input border-border">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ACCOUNT_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Moeda</Label>
-                <Input
+                <Select
                   value={form.currency}
-                  onChange={(e) => setForm((prev) => ({ ...prev, currency: e.target.value }))}
-                  required
-                  className="bg-input border-border"
-                />
+                  onValueChange={(v) => setForm((prev) => ({ ...prev, currency: v }))}
+                >
+                  <SelectTrigger className="bg-input border-border">
+                    <SelectValue placeholder="Selecione a moeda" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <Label>Saldo inicial (centavos)</Label>
+                <Label>Saldo inicial</Label>
                 <Input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={form.initialBalanceCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, initialBalanceCents: e.target.value }))}
+                  placeholder="0,00"
                   required
                   className="bg-input border-border"
                 />
@@ -229,7 +250,7 @@ export default function AccountsPage() {
                     <div>
                       <p className="font-medium text-foreground">{account.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {account.type} · {account.currency}
+                        {getAccountTypeLabel(account.type)} · {getCurrencyLabel(account.currency)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Instituicao: {institutions.find((inst) => inst.id === account.institutionId)?.name || "—"}
