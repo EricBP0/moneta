@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { apiClient } from "@/lib/api-client"
 import { formatCents, monthToday, toIsoDateTime } from "@/lib/format"
+import { parseMoneyToCents, formatCentsToInput } from "@/lib/utils/money"
+import { TRANSACTION_STATUS_OPTIONS, getTransactionStatusLabel } from "@/lib/constants/labels"
 import { useAppToast } from "@/contexts/toast-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -124,7 +126,7 @@ export default function TransactionsPage() {
     setEditing(txn)
     setForm({
       accountId: String(txn.accountId),
-      amountCents: String(txn.amountCents || ""),
+      amountCents: formatCentsToInput(txn.amountCents),
       direction: txn.direction,
       description: txn.description || "",
       occurredAt: txn.occurredAt ? new Date(txn.occurredAt).toISOString().slice(0, 16) : "",
@@ -143,7 +145,7 @@ export default function TransactionsPage() {
     try {
       const payload = {
         accountId: Number(form.accountId),
-        amountCents: Number(form.amountCents),
+        amountCents: parseMoneyToCents(form.amountCents),
         direction: form.direction,
         description: form.description,
         occurredAt: toIsoDateTime(form.occurredAt),
@@ -191,7 +193,7 @@ export default function TransactionsPage() {
       const payload = {
         fromAccountId: Number(transferForm.fromAccountId),
         toAccountId: Number(transferForm.toAccountId),
-        amountCents: Number(transferForm.amountCents),
+        amountCents: parseMoneyToCents(transferForm.amountCents),
         occurredAt: toIsoDateTime(transferForm.occurredAt),
         description: transferForm.description,
       }
@@ -329,8 +331,11 @@ export default function TransactionsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Todos</SelectItem>
-                  <SelectItem value="CLEARED">Cleared</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
+                  {TRANSACTION_STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -405,7 +410,7 @@ export default function TransactionsPage() {
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             txn.status === "CLEARED" ? "bg-primary/10 text-primary" : "bg-yellow-500/10 text-yellow-500"
                           }`}>
-                            {txn.status}
+                            {getTransactionStatusLabel(txn.status)}
                           </span>
                         </TableCell>
                         <TableCell className={`text-right font-medium ${
@@ -455,12 +460,12 @@ export default function TransactionsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Valor (centavos)</Label>
+                <Label>Valor</Label>
                 <Input
-                  type="number"
-                  min="1"
+                  type="text"
                   value={form.amountCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, amountCents: e.target.value }))}
+                  placeholder="0,00"
                   required
                   className="bg-input border-border"
                 />
@@ -518,8 +523,11 @@ export default function TransactionsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CLEARED">Cleared</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
+                    {TRANSACTION_STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -566,12 +574,12 @@ export default function TransactionsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Valor (centavos)</Label>
+              <Label>Valor</Label>
               <Input
-                type="number"
-                min="1"
+                type="text"
                 value={transferForm.amountCents}
                 onChange={(e) => setTransferForm((prev) => ({ ...prev, amountCents: e.target.value }))}
+                placeholder="0,00"
                 required
                 className="bg-input border-border"
               />

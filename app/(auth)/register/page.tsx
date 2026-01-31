@@ -16,14 +16,21 @@ export default function RegisterPage() {
   const router = useRouter()
   const { register, loading } = useAuth()
   const { addToast } = useAppToast()
-  const [form, setForm] = useState({ name: "", email: "", password: "" })
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" })
   const [error, setError] = useState("")
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError("")
+    
+    // Validate password confirmation
+    if (form.password !== form.confirmPassword) {
+      setError("As senhas não coincidem. Por favor, verifique.")
+      return
+    }
+    
     try {
-      await register(form)
+      await register({ name: form.name, email: form.email, password: form.password })
       addToast("Conta criada com sucesso.", "success")
       router.push("/dashboard")
     } catch (err) {
@@ -83,6 +90,18 @@ export default function RegisterPage() {
               placeholder="Crie uma senha"
               value={form.password}
               onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+              required
+              className="bg-input border-border"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirmar senha</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="Digite a senha novamente"
+              value={form.confirmPassword}
+              onChange={(e) => setForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
               required
               className="bg-input border-border"
             />
