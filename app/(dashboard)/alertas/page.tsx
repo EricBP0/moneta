@@ -65,9 +65,10 @@ export default function AlertsPage() {
       const unreadAlerts = previousAlerts.filter(alert => !alert.isRead)
       if (unreadAlerts.length > 0) {
         // Process in chunks to avoid overwhelming the server with parallel requests
+        // Chunk size of 5 balances between performance and server load
         const CHUNK_SIZE = 5
-        for (let i = 0; i < unreadAlerts.length; i += CHUNK_SIZE) {
-          const chunk = unreadAlerts.slice(i, i + CHUNK_SIZE)
+        for (let chunkStart = 0; chunkStart < unreadAlerts.length; chunkStart += CHUNK_SIZE) {
+          const chunk = unreadAlerts.slice(chunkStart, chunkStart + CHUNK_SIZE)
           await Promise.all(
             chunk.map(alert => apiClient.patch(`/api/alerts/${alert.id}`, { isRead: true }))
           )
