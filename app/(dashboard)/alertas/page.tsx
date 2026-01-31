@@ -64,9 +64,14 @@ export default function AlertsPage() {
     try {
       const unreadAlerts = previousAlerts.filter(alert => !alert.isRead)
       if (unreadAlerts.length > 0) {
-        await Promise.all(
-          unreadAlerts.map(alert => apiClient.patch(`/api/alerts/${alert.id}`, { isRead: true }))
-        )
+        // Process in chunks to avoid overwhelming the server with parallel requests
+        const CHUNK_SIZE = 5
+        for (let i = 0; i < unreadAlerts.length; i += CHUNK_SIZE) {
+          const chunk = unreadAlerts.slice(i, i + CHUNK_SIZE)
+          await Promise.all(
+            chunk.map(alert => apiClient.patch(`/api/alerts/${alert.id}`, { isRead: true }))
+          )
+        }
       }
       addToast("Todos alertas marcados como lidos.", "success")
     } catch (err) {
@@ -86,6 +91,12 @@ export default function AlertsPage() {
   const getAlertTitle = (alert: Alert) => {
     const message = alert.message?.trim()
     return message ? message : getAlertTypeLabel(alert.type)
+  }
+
+  const shouldShowTypeBadge = (alert: Alert) => {
+    // Hide badge if title is already showing the type label (to avoid duplication)
+    const message = alert.message?.trim()
+    return message !== ""
   }
 
   const unreadCount = alerts.filter((a) => !a.isRead).length
@@ -142,9 +153,11 @@ export default function AlertsPage() {
                     <div>
                       <p className="font-medium text-foreground">{getAlertTitle(alert)}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                          {getAlertTypeLabel(alert.type)}
-                        </span>
+                        {shouldShowTypeBadge(alert) && (
+                          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+                            {getAlertTypeLabel(alert.type)}
+                          </span>
+                        )}
                         <span>{new Date(alert.triggeredAt).toLocaleString("pt-BR")}</span>
                       </div>
                     </div>
