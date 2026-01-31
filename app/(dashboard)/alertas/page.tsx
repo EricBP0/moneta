@@ -76,10 +76,12 @@ export default function AlertsPage() {
       }
       addToast("Todos alertas marcados como lidos.", "success")
     } catch (err) {
-      // Revert on error
-      setAlerts(previousAlerts)
       const message = err instanceof Error ? err.message : "Erro ao marcar alertas"
       addToast(message, "error")
+    } finally {
+      // Always reload alerts from server to ensure UI is in sync
+      // Some PATCH calls may have succeeded even if others failed
+      await loadAlerts()
     }
   }
 
