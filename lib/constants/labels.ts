@@ -5,8 +5,11 @@
 // Alert types - map enums to friendly Brazilian Portuguese labels
 export const ALERT_TYPE_LABELS: Record<string, string> = {
   'GOAL_BEHIND': 'Objetivo em atraso',
+  'GOAL_REACHED': 'Objetivo alcançado',
   'GOAL_ACHIEVED': 'Objetivo alcançado',
   'BUDGET_EXCEEDED': 'Orçamento excedido',
+  'BUDGET_80': 'Orçamento atingiu 80%',
+  'BUDGET_100': 'Orçamento atingiu 100%',
   'BUDGET_80_PERCENT': 'Orçamento atingiu 80%',
   'BUDGET_100_PERCENT': 'Orçamento atingiu 100%',
   'LOW_BALANCE': 'Saldo baixo',
