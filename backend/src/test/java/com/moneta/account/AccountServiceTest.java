@@ -72,7 +72,7 @@ class AccountServiceTest {
         return 250L;
       }
     };
-    when(txnRepository.findPostedBalancesByUserId(1L)).thenReturn(List.of(projection));
+    when(txnRepository.findSettledBalancesByUserId(1L)).thenReturn(List.of(projection));
 
     var result = accountService.listWithBalances(1L);
 

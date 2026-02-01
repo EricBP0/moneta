@@ -21,9 +21,7 @@ import com.moneta.goal.GoalRepository;
 import com.moneta.txn.TxnRepository;
 import com.moneta.txn.TxnRepository.CategoryExpenseProjection;
 import com.moneta.txn.TxnRepository.MonthlyTotalsProjection;
-import java.time.OffsetDateTime;
 import java.time.YearMonth;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,17 +67,7 @@ public class DashboardService {
     MonthRefValidator.validate(monthRef);
 
     YearMonth targetMonth = YearMonth.parse(monthRef);
-    OffsetDateTime start = targetMonth.atDay(1).atStartOfDay().atOffset(ZoneOffset.UTC);
-    OffsetDateTime end = targetMonth.plusMonths(1).atDay(1).atStartOfDay().atOffset(ZoneOffset.UTC);
-    logger.info(
-      "Dashboard monthly request userId={} monthRef={} start={} end={}",
-      userId,
-      monthRef,
-      start,
-      end
-    );
-
-    long txnCount = txnRepository.countPostedByUserIdAndMonthRef(userId, monthRef);
+    long txnCount = txnRepository.countSettledByUserIdAndMonthRef(userId, monthRef);
     logger.info(
       "Dashboard monthly transactions userId={} monthRef={} count={}",
       userId,

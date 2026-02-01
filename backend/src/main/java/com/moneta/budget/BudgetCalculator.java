@@ -16,8 +16,8 @@ public class BudgetCalculator {
   }
 
   public long calculateConsumption(Long userId, String monthRef, Long categoryId, Long subcategoryId) {
-    Long total = txnRepository.sumPostedOutByUserAndMonthAndCategory(userId, monthRef, categoryId, subcategoryId);
-    long count = txnRepository.countPostedOutByUserAndMonthAndCategory(userId, monthRef, categoryId, subcategoryId);
+    Long total = txnRepository.sumSettledOutByUserAndMonthAndCategory(userId, monthRef, categoryId, subcategoryId);
+    long count = txnRepository.countSettledOutByUserAndMonthAndCategory(userId, monthRef, categoryId, subcategoryId);
     long result = total == null ? 0L : total;
     logger.debug(
       "Budget consumption userId={} monthRef={} categoryId={} subcategoryId={} count={} totalCents={}",

@@ -43,7 +43,7 @@ public class AccountService {
 
   public List<AccountWithBalance> listWithBalances(Long userId) {
     List<Account> accounts = accountRepository.findAllByUserIdAndIsActiveTrue(userId);
-    var balanceMap = txnRepository.findPostedBalancesByUserId(userId).stream()
+    var balanceMap = txnRepository.findSettledBalancesByUserId(userId).stream()
       .collect(java.util.stream.Collectors.toMap(
         com.moneta.txn.TxnRepository.TxnBalanceProjection::getAccountId,
         com.moneta.txn.TxnRepository.TxnBalanceProjection::getBalanceCents
@@ -64,7 +64,7 @@ public class AccountService {
 
   public AccountWithBalance getWithBalance(Long userId, Long id) {
     Account account = get(userId, id);
-    Long postedBalance = txnRepository.findPostedBalanceByUserIdAndAccountId(userId, id);
+    Long postedBalance = txnRepository.findSettledBalanceByUserIdAndAccountId(userId, id);
     long balance = account.getInitialBalanceCents() + (postedBalance == null ? 0L : postedBalance);
     return new AccountWithBalance(account, balance);
   }
