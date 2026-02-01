@@ -17,7 +17,7 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
         then t.amountCents else -t.amountCents end), 0) as balanceCents
     from Txn t
     where t.user.id = :userId
-      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.isActive = true
     group by t.account.id
   """)
@@ -29,7 +29,7 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     from Txn t
     where t.user.id = :userId
       and t.account.id = :accountId
-      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.isActive = true
   """)
   Long findPostedBalanceByUserIdAndAccountId(
@@ -42,13 +42,44 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     from Txn t
     where t.user.id = :userId
       and t.monthRef = :monthRef
-      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.direction = com.moneta.txn.TxnDirection.OUT
       and t.isActive = true
       and (:categoryId is null or t.categoryId = :categoryId)
       and (:subcategoryId is null or t.subcategoryId = :subcategoryId)
   """)
   Long sumPostedOutByUserAndMonthAndCategory(
+    @Param("userId") Long userId,
+    @Param("monthRef") String monthRef,
+    @Param("categoryId") Long categoryId,
+    @Param("subcategoryId") Long subcategoryId
+  );
+
+  @Query("""
+    select count(t)
+    from Txn t
+    where t.user.id = :userId
+      and t.monthRef = :monthRef
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
+      and t.isActive = true
+  """)
+  long countPostedByUserIdAndMonthRef(
+    @Param("userId") Long userId,
+    @Param("monthRef") String monthRef
+  );
+
+  @Query("""
+    select count(t)
+    from Txn t
+    where t.user.id = :userId
+      and t.monthRef = :monthRef
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
+      and t.direction = com.moneta.txn.TxnDirection.OUT
+      and t.isActive = true
+      and (:categoryId is null or t.categoryId = :categoryId)
+      and (:subcategoryId is null or t.subcategoryId = :subcategoryId)
+  """)
+  long countPostedOutByUserAndMonthAndCategory(
     @Param("userId") Long userId,
     @Param("monthRef") String monthRef,
     @Param("categoryId") Long categoryId,
@@ -64,7 +95,7 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     from Txn t
     where t.user.id = :userId
       and t.monthRef = :monthRef
-      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.isActive = true
   """)
   MonthlyTotalsProjection findMonthlyTotals(
@@ -78,7 +109,7 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     from Txn t
     where t.user.id = :userId
       and t.monthRef = :monthRef
-      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.direction = com.moneta.txn.TxnDirection.OUT
       and t.isActive = true
       and t.categoryId is not null
