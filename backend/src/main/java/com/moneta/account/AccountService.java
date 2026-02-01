@@ -64,8 +64,8 @@ public class AccountService {
 
   public AccountWithBalance getWithBalance(Long userId, Long id) {
     Account account = get(userId, id);
-    Long postedBalance = txnRepository.findSettledBalanceByUserIdAndAccountId(userId, id);
-    long balance = account.getInitialBalanceCents() + (postedBalance == null ? 0L : postedBalance);
+    Long settledBalance = txnRepository.findSettledBalanceByUserIdAndAccountId(userId, id);
+    long balance = account.getInitialBalanceCents() + (settledBalance == null ? 0L : settledBalance);
     return new AccountWithBalance(account, balance);
   }
 
