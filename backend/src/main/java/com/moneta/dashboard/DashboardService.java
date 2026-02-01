@@ -66,12 +66,35 @@ public class DashboardService {
   public MonthlyResponse getMonthly(Long userId, String monthRef) {
     MonthRefValidator.validate(monthRef);
 
+    YearMonth targetMonth = YearMonth.parse(monthRef);
+    long txnCount = txnRepository.countSettledByUserIdAndMonthRef(userId, monthRef);
+    logger.info(
+      "Dashboard monthly transactions userId={} monthRef={} count={}",
+      userId,
+      monthRef,
+      txnCount
+    );
+
     MonthlyTotalsProjection totals = txnRepository.findMonthlyTotals(userId, monthRef);
     long income = totals == null ? 0L : totals.getIncomeCents();
     long expense = totals == null ? 0L : totals.getExpenseCents();
     long net = income - expense;
+    logger.info(
+      "Dashboard monthly totals userId={} monthRef={} incomeCents={} expenseCents={} netCents={}",
+      userId,
+      monthRef,
+      income,
+      expense,
+      net
+    );
 
     List<CategoryExpenseProjection> expenseRows = txnRepository.findCategoryExpenses(userId, monthRef);
+    logger.debug(
+      "Dashboard category expenses userId={} monthRef={} rows={}",
+      userId,
+      monthRef,
+      expenseRows.size()
+    );
     Map<Long, Category> categoryMap = categoryRepository.findAllByUserIdAndIsActiveTrue(userId).stream()
       .collect(Collectors.toMap(Category::getId, category -> category));
     List<CategorySpend> byCategory = expenseRows.stream()
@@ -136,7 +159,7 @@ public class DashboardService {
       ))
       .toList();
 
-    YearMonth asOfMonth = YearMonth.parse(monthRef);
+    YearMonth asOfMonth = targetMonth;
     List<Goal> goals = goalRepository.findAllByUserId(userId);
     List<GoalSummary> goalSummaries = goals.stream()
       .map(goal -> buildGoalSummary(userId, goal, asOfMonth))

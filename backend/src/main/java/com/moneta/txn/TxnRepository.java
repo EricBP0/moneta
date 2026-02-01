@@ -17,11 +17,11 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
         then t.amountCents else -t.amountCents end), 0) as balanceCents
     from Txn t
     where t.user.id = :userId
-      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.isActive = true
     group by t.account.id
   """)
-  List<TxnBalanceProjection> findPostedBalancesByUserId(@Param("userId") Long userId);
+  List<TxnBalanceProjection> findSettledBalancesByUserId(@Param("userId") Long userId);
 
   @Query("""
     select coalesce(sum(case when t.direction = com.moneta.txn.TxnDirection.IN
@@ -29,10 +29,10 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     from Txn t
     where t.user.id = :userId
       and t.account.id = :accountId
-      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.isActive = true
   """)
-  Long findPostedBalanceByUserIdAndAccountId(
+  Long findSettledBalanceByUserIdAndAccountId(
     @Param("userId") Long userId,
     @Param("accountId") Long accountId
   );
@@ -42,19 +42,58 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     from Txn t
     where t.user.id = :userId
       and t.monthRef = :monthRef
-      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.direction = com.moneta.txn.TxnDirection.OUT
       and t.isActive = true
       and (:categoryId is null or t.categoryId = :categoryId)
       and (:subcategoryId is null or t.subcategoryId = :subcategoryId)
   """)
-  Long sumPostedOutByUserAndMonthAndCategory(
+  Long sumSettledOutByUserAndMonthAndCategory(
     @Param("userId") Long userId,
     @Param("monthRef") String monthRef,
     @Param("categoryId") Long categoryId,
     @Param("subcategoryId") Long subcategoryId
   );
 
+  @Query("""
+    select count(t)
+    from Txn t
+    where t.user.id = :userId
+      and t.monthRef = :monthRef
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
+      and t.isActive = true
+  """)
+  long countSettledByUserIdAndMonthRef(
+    @Param("userId") Long userId,
+    @Param("monthRef") String monthRef
+  );
+
+  @Query("""
+    select count(t)
+    from Txn t
+    where t.user.id = :userId
+      and t.monthRef = :monthRef
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
+      and t.direction = com.moneta.txn.TxnDirection.OUT
+      and t.isActive = true
+      and (:categoryId is null or t.categoryId = :categoryId)
+      and (:subcategoryId is null or t.subcategoryId = :subcategoryId)
+  """)
+  long countSettledOutByUserAndMonthAndCategory(
+    @Param("userId") Long userId,
+    @Param("monthRef") String monthRef,
+    @Param("categoryId") Long categoryId,
+    @Param("subcategoryId") Long subcategoryId
+  );
+
+  /**
+   * Finds monthly totals (income and expenses) for a user in a specific month.
+   * Includes transactions with status POSTED or CLEARED.
+   *
+   * @param userId the user ID
+   * @param monthRef the month reference (format: YYYY-MM)
+   * @return monthly totals projection with income and expense cents
+   */
   @Query("""
     select
       coalesce(sum(case when t.direction = com.moneta.txn.TxnDirection.IN then t.amountCents else 0 end), 0)
@@ -64,7 +103,7 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     from Txn t
     where t.user.id = :userId
       and t.monthRef = :monthRef
-      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.isActive = true
   """)
   MonthlyTotalsProjection findMonthlyTotals(
@@ -72,13 +111,21 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     @Param("monthRef") String monthRef
   );
 
+  /**
+   * Finds category-wise expenses for a user in a specific month.
+   * Includes transactions with status POSTED or CLEARED.
+   *
+   * @param userId the user ID
+   * @param monthRef the month reference (format: YYYY-MM)
+   * @return list of category expense projections
+   */
   @Query("""
     select t.categoryId as categoryId,
       coalesce(sum(t.amountCents), 0) as expenseCents
     from Txn t
     where t.user.id = :userId
       and t.monthRef = :monthRef
-      and t.status = com.moneta.txn.TxnStatus.POSTED
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.direction = com.moneta.txn.TxnDirection.OUT
       and t.isActive = true
       and t.categoryId is not null

@@ -75,7 +75,7 @@ class BudgetServiceTest {
     categoryBudget.setMonthRef("2024-08");
     categoryBudget.setCategoryId(10L);
     categoryBudget.setLimitCents(1000L);
-    when(txnRepository.sumPostedOutByUserAndMonthAndCategory(1L, "2024-08", 10L, null)).thenReturn(500L);
+    when(txnRepository.sumSettledOutByUserAndMonthAndCategory(1L, "2024-08", 10L, null)).thenReturn(500L);
 
     long categoryConsumption = budgetService.calculateConsumption(categoryBudget);
     assertThat(categoryConsumption).isEqualTo(500L);
@@ -85,7 +85,7 @@ class BudgetServiceTest {
     subcategoryBudget.setMonthRef("2024-08");
     subcategoryBudget.setSubcategoryId(20L);
     subcategoryBudget.setLimitCents(1000L);
-    when(txnRepository.sumPostedOutByUserAndMonthAndCategory(1L, "2024-08", null, 20L)).thenReturn(300L);
+    when(txnRepository.sumSettledOutByUserAndMonthAndCategory(1L, "2024-08", null, 20L)).thenReturn(300L);
 
     long subcategoryConsumption = budgetService.calculateConsumption(subcategoryBudget);
     assertThat(subcategoryConsumption).isEqualTo(300L);
