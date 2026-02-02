@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TxnService {
   private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
+  private static final Logger logger = LoggerFactory.getLogger(TxnService.class);
 
   private final TxnRepository txnRepository;
   private final UserRepository userRepository;
@@ -66,6 +69,16 @@ public class TxnService {
     txn.setCategorizationMode(resolveCategorizationMode(request));
     txn.setImportBatchId(request.importBatchId());
     Txn saved = txnRepository.save(txn);
+    logger.info(
+      "Transaction created userId={} txnId={} accountId={} amountCents={} direction={} occurredAt={} categoryId={}",
+      userId,
+      saved.getId(),
+      account.getId(),
+      saved.getAmountCents(),
+      saved.getDirection(),
+      saved.getOccurredAt(),
+      saved.getCategoryId()
+    );
     alertService.evaluateBudgetsForTxn(saved);
     return saved;
   }

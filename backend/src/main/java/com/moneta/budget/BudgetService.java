@@ -6,11 +6,15 @@ import com.moneta.auth.UserRepository;
 import com.moneta.category.CategoryRepository;
 import com.moneta.common.MonthRefValidator;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class BudgetService {
+  private static final Logger logger = LoggerFactory.getLogger(BudgetService.class);
+
   private final BudgetRepository budgetRepository;
   private final UserRepository userRepository;
   private final CategoryRepository categoryRepository;
@@ -55,9 +59,13 @@ public class BudgetService {
   public List<Budget> list(Long userId, String monthRef) {
     if (monthRef != null && !monthRef.isBlank()) {
       MonthRefValidator.validate(monthRef);
-      return budgetRepository.findAllByUserIdAndMonthRef(userId, monthRef);
+      List<Budget> budgets = budgetRepository.findAllByUserIdAndMonthRef(userId, monthRef);
+      logger.info("Budgets summary userId={} monthRef={} count={}", userId, monthRef, budgets.size());
+      return budgets;
     }
-    return budgetRepository.findAllByUserId(userId);
+    List<Budget> budgets = budgetRepository.findAllByUserId(userId);
+    logger.info("Budgets summary userId={} monthRef=ALL count={}", userId, budgets.size());
+    return budgets;
   }
 
   @Transactional

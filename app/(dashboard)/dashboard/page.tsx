@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useMemo } from "react"
 import Link from "next/link"
 import { apiClient } from "@/lib/api-client"
 import { formatCents, formatPercent, monthToday } from "@/lib/format"
 import { useAppToast } from "@/contexts/toast-context"
+import { getAlertTypeLabel, getGoalStatusLabel } from "@/lib/constants/labels"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -84,6 +85,12 @@ interface Account {
   balanceCents: number
 }
 
+interface Category {
+  id: number
+  name: string
+  color: string | null
+}
+
 type DashboardCardType = "accounts" | "categories" | "budgets" | "alerts" | "goals"
 
 const DEFAULT_CARD_ORDER: DashboardCardType[] = [
@@ -136,6 +143,7 @@ export default function DashboardPage() {
   const [month, setMonth] = useState(monthToday())
   const [data, setData] = useState<DashboardData | null>(null)
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [isEditMode, setIsEditMode] = useState(false)
@@ -149,16 +157,24 @@ export default function DashboardPage() {
     })
   )
 
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, Category>()
+    categories.forEach(cat => map.set(cat.id, cat))
+    return map
+  }, [categories])
+
   const loadDashboard = useCallback(async () => {
     setLoading(true)
     setError("")
     try {
-      const [dashboardResponse, accountsResponse] = await Promise.all([
+      const [dashboardResponse, accountsResponse, categoriesResponse] = await Promise.all([
         apiClient.get<DashboardData>(`/api/dashboard/monthly?month=${month}`),
         apiClient.get<Account[]>("/api/accounts"),
+        apiClient.get<Category[]>("/api/categories"),
       ])
       setData(dashboardResponse)
       setAccounts(accountsResponse || [])
+      setCategories(categoriesResponse || [])
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao carregar dashboard"
       setError(message)
@@ -361,7 +377,9 @@ export default function DashboardPage() {
             {data?.budgetStatus.map((budget) => (
               <div key={budget.budgetId} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-foreground">Categoria #{budget.categoryId || "—"}</span>
+                  <span className="text-sm text-foreground">
+                    {categoryMap.get(budget.categoryId)?.name || "Sem categoria"}
+                  </span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">
                       {formatCents(budget.consumptionCents)} / {formatCents(budget.limitCents)}
@@ -410,7 +428,7 @@ export default function DashboardPage() {
             {data?.alerts.slice(0, 5).map((alert) => (
               <div key={alert.id} className={`flex items-start justify-between py-2 border-b border-border last:border-0 ${alert.isRead ? 'opacity-50' : ''}`}>
                 <div>
-                  <p className="font-medium text-foreground">{alert.type}</p>
+                  <p className="font-medium text-foreground">{getAlertTypeLabel(alert.type)}</p>
                   <p className="text-sm text-muted-foreground">{alert.message}</p>
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -447,7 +465,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">{goal.name}</p>
-                    <p className="text-xs text-muted-foreground">{goal.status}</p>
+                    <p className="text-xs text-muted-foreground">{getGoalStatusLabel(goal.status)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-primary">{formatPercent(goal.percent)}</p>
