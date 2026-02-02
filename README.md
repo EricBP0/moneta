@@ -1,6 +1,6 @@
 # Moneta
 
-[![Deploy](https://github.com/EricBP0/moneta/actions/workflows/deploy.yml/badge.svg?branch=main&event=deployment)](https://github.com/EricBP0/moneta/actions/workflows/deploy.yml)
+[![Deploy](https://github.com/EricBP0/moneta/actions/workflows/deploy.yml/badge.svg)](https://github.com/EricBP0/moneta/actions/workflows/deploy.yml)
 
 Moneta is a personal finance management application designed to provide clear and structured control over expenses, budgets and financial goals.
 
