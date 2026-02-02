@@ -90,4 +90,9 @@ class BudgetServiceTest {
     long subcategoryConsumption = budgetService.calculateConsumption(subcategoryBudget);
     assertThat(subcategoryConsumption).isEqualTo(300L);
   }
+
+  @Test
+  void calculatePercentHandlesZeroLimit() {
+    assertThat(budgetService.calculatePercent(500L, 0L)).isEqualTo(0.0);
+  }
 }

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Upload, FileText, CheckCircle, Clock, AlertCircle, RefreshCw, Download, HelpCircle, Info } from "lucide-react"
+import { Upload, FileText, CheckCircle, Clock, AlertCircle, Download, HelpCircle, Info } from "lucide-react"
 
 interface Account {
   id: number
@@ -17,16 +17,18 @@ interface Account {
 }
 
 interface ImportJob {
-  id: number
+  batchId: number
   accountId: number
   filename: string
-  format: string
+  uploadedAt: string | null
   status: string
-  rowsTotal: number
-  rowsProcessed: number
-  rowsFailed: number
-  startedAt: string | null
-  finishedAt: string | null
+  totals: {
+    totalRows: number
+    errorRows: number
+    duplicateRows: number
+    readyRows: number
+    committedRows: number
+  }
 }
 
 export default function ImportPage() {
@@ -44,7 +46,7 @@ export default function ImportPage() {
     try {
       const [accountsData, jobsData] = await Promise.all([
         apiClient.get<Account[]>("/api/accounts"),
-        apiClient.get<ImportJob[]>("/api/imports"),
+        apiClient.get<ImportJob[]>("/api/import/batches"),
       ])
       setAccounts(accountsData || [])
       setJobs(jobsData || [])
@@ -100,18 +102,11 @@ export default function ImportPage() {
     }
     setUploading(true)
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase()
-      let format = "CSV"
-      if (ext === "ofx") format = "OFX"
-      else if (ext === "json") format = "JSON"
-      
       const formData = new FormData()
       formData.append('file', file)
       formData.append('accountId', accountId)
-      formData.append('format', format)
-      formData.append('filename', file.name)
       
-      await apiClient.post("/api/imports/upload", formData, { isForm: true })
+      await apiClient.post("/api/import/csv", formData, { isForm: true })
       
       addToast("Importação iniciada.", "success")
       setFile(null)
@@ -122,17 +117,6 @@ export default function ImportPage() {
       addToast(message, "error")
     } finally {
       setUploading(false)
-    }
-  }
-
-  const retryJob = async (jobId: number) => {
-    try {
-      await apiClient.post(`/api/imports/${jobId}/retry`, {})
-      addToast("Retentativa iniciada.", "success")
-      loadData()
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro"
-      addToast(message, "error")
     }
   }
 
@@ -165,15 +149,30 @@ export default function ImportPage() {
 
   const statusIcon = (status: string) => {
     switch (status) {
-      case "COMPLETED":
+      case "COMMITTED":
         return <CheckCircle className="h-4 w-4 text-primary" />
-      case "PENDING":
-      case "PROCESSING":
+      case "UPLOADED":
+      case "PARSED":
         return <Clock className="h-4 w-4 text-yellow-500" />
       case "FAILED":
         return <AlertCircle className="h-4 w-4 text-destructive" />
       default:
         return <FileText className="h-4 w-4 text-muted-foreground" />
+    }
+  }
+
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case "COMMITTED":
+        return "Concluída"
+      case "UPLOADED":
+        return "Enviada"
+      case "PARSED":
+        return "Validada"
+      case "FAILED":
+        return "Falhou"
+      default:
+        return status
     }
   }
 
@@ -347,7 +346,7 @@ export default function ImportPage() {
             <div className="space-y-3">
               {jobs.map((job) => (
                 <div
-                  key={job.id}
+                  key={job.batchId}
                   className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-secondary/50 border border-border"
                 >
                   <div className="flex items-center gap-4">
@@ -357,10 +356,10 @@ export default function ImportPage() {
                     <div>
                       <p className="font-medium text-foreground">{job.filename}</p>
                       <p className="text-sm text-muted-foreground">
-                        Conta: {accounts.find((a) => a.id === job.accountId)?.name || job.accountId} · {job.format}
+                        Conta: {accounts.find((a) => a.id === job.accountId)?.name || job.accountId}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {job.rowsProcessed}/{job.rowsTotal} linhas · {job.rowsFailed} falhas
+                        {job.totals.committedRows}/{job.totals.totalRows} linhas · {job.totals.errorRows} falhas
                       </p>
                     </div>
                   </div>
@@ -368,17 +367,12 @@ export default function ImportPage() {
                     <div className="flex items-center gap-2">
                       {statusIcon(job.status)}
                       <span className={`text-sm font-medium ${
-                        job.status === "COMPLETED" ? "text-primary" :
+                        job.status === "COMMITTED" ? "text-primary" :
                         job.status === "FAILED" ? "text-destructive" : "text-yellow-500"
                       }`}>
-                        {job.status}
+                        {statusLabel(job.status)}
                       </span>
                     </div>
-                    {job.status === "FAILED" && (
-                      <Button variant="ghost" size="icon" onClick={() => retryJob(job.id)}>
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 </div>
               ))}

@@ -5,6 +5,7 @@ import { apiClient } from "@/lib/api-client"
 import { formatCents, formatPercent } from "@/lib/format"
 import { parseMoneyToCents, formatCentsToInput } from "@/lib/utils/money"
 import { useAppToast } from "@/contexts/toast-context"
+import { getGoalStatusLabel } from "@/lib/constants/labels"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,15 +19,15 @@ interface Goal {
   id: number
   name: string
   targetAmountCents: number
-  currentAmountCents: number
-  targetDate: string | null
+  savedSoFarCents: number
+  targetDate: string
+  startDate: string | null
   status: string
 }
 
 const defaultForm = {
   name: "",
   targetAmountCents: "",
-  currentAmountCents: "",
   targetDate: "",
 }
 
@@ -76,7 +77,6 @@ export default function GoalsPage() {
     setForm({
       name: goal.name,
       targetAmountCents: formatCentsToInput(goal.targetAmountCents),
-      currentAmountCents: formatCentsToInput(goal.currentAmountCents),
       targetDate: goal.targetDate ?? "",
     })
     setIsFormOpen(true)
@@ -92,7 +92,6 @@ export default function GoalsPage() {
       const payload = {
         name: form.name,
         targetAmountCents: parseMoneyToCents(form.targetAmountCents),
-        currentAmountCents: parseMoneyToCents(form.currentAmountCents),
         targetDate: form.targetDate,
       }
       if (editing) {
@@ -132,7 +131,9 @@ export default function GoalsPage() {
     event.preventDefault()
     if (!depositGoalId) return
     try {
-      await apiClient.post(`/api/goals/${depositGoalId}/deposit`, {
+      const today = new Date().toISOString().slice(0, 10)
+      await apiClient.post(`/api/goals/${depositGoalId}/contributions`, {
+        contributedAt: today,
         amountCents: parseMoneyToCents(depositAmount),
       })
       addToast("Deposito registrado.", "success")
@@ -146,7 +147,7 @@ export default function GoalsPage() {
 
   const getPercent = (goal: Goal) => {
     if (goal.targetAmountCents === 0) return 0
-    return Math.round((goal.currentAmountCents / goal.targetAmountCents) * 100)
+    return Math.round((goal.savedSoFarCents / goal.targetAmountCents) * 100)
   }
 
   return (
@@ -197,7 +198,7 @@ export default function GoalsPage() {
                       <span className={`text-xs font-medium ${
                         goal.status === "ACTIVE" ? "text-primary" : "text-muted-foreground"
                       }`}>
-                        {goal.status}
+                        {getGoalStatusLabel(goal.status)}
                       </span>
                     </div>
                   </div>
@@ -214,7 +215,7 @@ export default function GoalsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">
-                        {formatCents(goal.currentAmountCents)} / {formatCents(goal.targetAmountCents)}
+                        {formatCents(goal.savedSoFarCents)} / {formatCents(goal.targetAmountCents)}
                       </span>
                       <span className="font-medium text-primary">{formatPercent(percent)}</span>
                     </div>
@@ -252,7 +253,7 @@ export default function GoalsPage() {
                 className="bg-input border-border"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <div className="space-y-2">
                 <Label>Valor objetivo</Label>
                 <Input
@@ -260,18 +261,6 @@ export default function GoalsPage() {
                   inputMode="decimal"
                   value={form.targetAmountCents}
                   onChange={(e) => setForm((prev) => ({ ...prev, targetAmountCents: e.target.value }))}
-                  placeholder="0,00"
-                  required
-                  className="bg-input border-border"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Valor atual</Label>
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  value={form.currentAmountCents}
-                  onChange={(e) => setForm((prev) => ({ ...prev, currentAmountCents: e.target.value }))}
                   placeholder="0,00"
                   required
                   className="bg-input border-border"

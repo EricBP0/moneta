@@ -43,6 +43,23 @@ export function getTransactionStatusLabel(status: string): string {
   return TRANSACTION_STATUS_LABELS[status] || status
 }
 
+// Goal status labels
+export const GOAL_STATUS_LABELS: Record<string, string> = {
+  'ACTIVE': 'Ativa',
+  'PAUSED': 'Pausada',
+  'ACHIEVED': 'Concluída',
+  'CANCELED': 'Cancelada',
+}
+
+/**
+ * Get friendly label for goal status
+ * @param status - Goal status enum
+ * @returns Friendly label
+ */
+export function getGoalStatusLabel(status: string): string {
+  return GOAL_STATUS_LABELS[status] || status
+}
+
 // Account type labels
 export const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   'CHECKING': 'Conta corrente',
