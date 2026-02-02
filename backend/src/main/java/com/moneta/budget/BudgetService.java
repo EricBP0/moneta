@@ -76,21 +76,12 @@ public class BudgetService {
   }
 
   public long calculateConsumption(Budget budget) {
-    long consumption = budgetCalculator.calculateConsumption(
+    return budgetCalculator.calculateConsumption(
       budget.getUser().getId(),
       budget.getMonthRef(),
       budget.getCategoryId(),
       budget.getSubcategoryId()
     );
-    logger.debug(
-      "Budget consumption userId={} monthRef={} categoryId={} subcategoryId={} consumptionCents={}",
-      budget.getUser().getId(),
-      budget.getMonthRef(),
-      budget.getCategoryId(),
-      budget.getSubcategoryId(),
-      consumption
-    );
-    return consumption;
   }
 
   public double calculatePercent(long consumptionCents, long limitCents) {

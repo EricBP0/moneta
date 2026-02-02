@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useMemo } from "react"
 import Link from "next/link"
 import { apiClient } from "@/lib/api-client"
 import { formatCents, formatPercent, monthToday } from "@/lib/format"
@@ -156,6 +156,12 @@ export default function DashboardPage() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   )
+
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, Category>()
+    categories.forEach(cat => map.set(cat.id, cat))
+    return map
+  }, [categories])
 
   const loadDashboard = useCallback(async () => {
     setLoading(true)
@@ -372,7 +378,7 @@ export default function DashboardPage() {
               <div key={budget.budgetId} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-foreground">
-                    {categories.find((category) => category.id === budget.categoryId)?.name || "Sem categoria"}
+                    {categoryMap.get(budget.categoryId)?.name || "Sem categoria"}
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">

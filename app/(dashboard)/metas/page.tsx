@@ -21,7 +21,7 @@ interface Goal {
   targetAmountCents: number
   savedSoFarCents: number
   targetDate: string
-  startDate: string | null
+  startDate: string
   status: string
 }
 
@@ -131,7 +131,11 @@ export default function GoalsPage() {
     event.preventDefault()
     if (!depositGoalId) return
     try {
-      const today = new Date().toISOString().slice(0, 10)
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const today = `${year}-${month}-${day}`
       await apiClient.post(`/api/goals/${depositGoalId}/contributions`, {
         contributedAt: today,
         amountCents: parseMoneyToCents(depositAmount),
