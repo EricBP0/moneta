@@ -47,6 +47,7 @@ export function getTransactionStatusLabel(status: string): string {
 export const GOAL_STATUS_LABELS: Record<string, string> = {
   'ACTIVE': 'Ativa',
   'PAUSED': 'Pausada',
+  'COMPLETED': 'Concluída',
   'ACHIEVED': 'Concluída',
   'CANCELED': 'Cancelada',
 }

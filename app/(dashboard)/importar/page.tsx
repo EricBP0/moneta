@@ -180,7 +180,7 @@ export default function ImportPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Importar</h1>
-        <p className="text-muted-foreground">Carregue extratos CSV, OFX ou JSON.</p>
+        <p className="text-muted-foreground">Carregue extratos CSV.</p>
       </div>
 
       {/* Instructions & Template */}
@@ -193,26 +193,12 @@ export default function ImportPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="font-medium text-foreground mb-2">Formatos aceitos</h3>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="p-3 rounded-lg bg-secondary/50 border border-border">
-                <p className="font-medium text-foreground mb-1">CSV</p>
-                <p className="text-xs text-muted-foreground">
-                  Arquivo de texto com colunas: data, descricao, valor, tipo
-                </p>
-              </div>
-              <div className="p-3 rounded-lg bg-secondary/50 border border-border">
-                <p className="font-medium text-foreground mb-1">OFX</p>
-                <p className="text-xs text-muted-foreground">
-                  Formato padrão de extratos bancários
-                </p>
-              </div>
-              <div className="p-3 rounded-lg bg-secondary/50 border border-border">
-                <p className="font-medium text-foreground mb-1">JSON</p>
-                <p className="text-xs text-muted-foreground">
-                  Formato estruturado para integração
-                </p>
-              </div>
+            <h3 className="font-medium text-foreground mb-2">Formato aceito</h3>
+            <div className="p-3 rounded-lg bg-secondary/50 border border-border">
+              <p className="font-medium text-foreground mb-1">CSV</p>
+              <p className="text-xs text-muted-foreground">
+                Arquivo de texto com colunas: data, descricao, valor, tipo
+              </p>
             </div>
           </div>
 
@@ -297,7 +283,7 @@ export default function ImportPage() {
                 <Label>Arquivo</Label>
                 <Input
                   type="file"
-                  accept=".csv,.ofx,.json"
+                  accept=".csv"
                   onChange={handleFileSelect}
                   className="bg-input border-border"
                 />
