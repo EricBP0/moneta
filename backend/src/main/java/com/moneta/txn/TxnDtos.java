@@ -7,7 +7,9 @@ import java.util.UUID;
 
 public class TxnDtos {
   public record TxnRequest(
-    @NotNull(message = "conta é obrigatória") Long accountId,
+    @NotNull(message = "tipo de pagamento é obrigatório") PaymentType paymentType,
+    Long accountId,
+    Long cardId,
     @NotNull(message = "valor é obrigatório") @Positive(message = "valor deve ser positivo") Long amountCents,
     @NotNull(message = "direção é obrigatória") TxnDirection direction,
     String description,
@@ -40,7 +42,9 @@ public class TxnDtos {
       Long importBatchId
     ) {
       this(
+        PaymentType.PIX,
         accountId,
+        null,
         amountCents,
         direction,
         description,
@@ -59,6 +63,8 @@ public class TxnDtos {
   public record TxnResponse(
     Long id,
     Long accountId,
+    Long cardId,
+    PaymentType paymentType,
     Long amountCents,
     TxnDirection direction,
     String description,

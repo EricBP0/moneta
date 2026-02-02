@@ -322,7 +322,11 @@ public class ImportService {
   }
 
   private Set<String> buildExistingTxnHashes(Long userId, Long accountId) {
-    List<Txn> txns = txnRepository.findByUserIdAndAccountIdAndIsActiveTrue(userId, accountId);
+    List<Txn> txns = txnRepository.findByUserIdAndAccountIdAndIsActiveTrueAndPaymentType(
+      userId,
+      accountId,
+      com.moneta.txn.PaymentType.PIX
+    );
     Set<String> hashes = new HashSet<>();
     for (Txn txn : txns) {
       LocalDate date = txn.getOccurredAt().toLocalDate();

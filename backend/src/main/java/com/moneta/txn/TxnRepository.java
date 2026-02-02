@@ -9,7 +9,11 @@ import org.springframework.data.repository.query.Param;
 
 public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificationExecutor<Txn> {
   Optional<Txn> findByIdAndUserIdAndIsActiveTrue(Long id, Long userId);
-  List<Txn> findByUserIdAndAccountIdAndIsActiveTrue(Long userId, Long accountId);
+  List<Txn> findByUserIdAndAccountIdAndIsActiveTrueAndPaymentType(
+    Long userId,
+    Long accountId,
+    PaymentType paymentType
+  );
 
   @Query("""
     select t.account.id as accountId,
@@ -17,6 +21,7 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
         then t.amountCents else -t.amountCents end), 0) as balanceCents
     from Txn t
     where t.user.id = :userId
+      and t.paymentType = com.moneta.txn.PaymentType.PIX
       and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.isActive = true
     group by t.account.id
@@ -29,6 +34,7 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     from Txn t
     where t.user.id = :userId
       and t.account.id = :accountId
+      and t.paymentType = com.moneta.txn.PaymentType.PIX
       and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
       and t.isActive = true
   """)
@@ -134,6 +140,24 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
   List<CategoryExpenseProjection> findCategoryExpenses(
     @Param("userId") Long userId,
     @Param("monthRef") String monthRef
+  );
+
+  @Query("""
+    select t
+    from Txn t
+    where t.user.id = :userId
+      and t.card.id = :cardId
+      and t.paymentType = com.moneta.txn.PaymentType.CARD
+      and t.isActive = true
+      and t.occurredAt >= :start
+      and t.occurredAt < :end
+    order by t.occurredAt desc
+  """)
+  List<Txn> findCardTransactionsByUserAndCardAndPeriod(
+    @Param("userId") Long userId,
+    @Param("cardId") Long cardId,
+    @Param("start") java.time.OffsetDateTime start,
+    @Param("end") java.time.OffsetDateTime end
   );
 
   interface TxnBalanceProjection {

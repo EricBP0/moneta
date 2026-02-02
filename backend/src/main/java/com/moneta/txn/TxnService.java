@@ -2,10 +2,12 @@ package com.moneta.txn;
 
 import com.moneta.account.Account;
 import com.moneta.account.AccountRepository;
+import com.moneta.alert.AlertService;
 import com.moneta.auth.User;
 import com.moneta.auth.UserRepository;
+import com.moneta.card.Card;
+import com.moneta.card.CardRepository;
 import com.moneta.category.CategoryRepository;
-import com.moneta.alert.AlertService;
 import com.moneta.txn.TxnDtos.TxnFilter;
 import com.moneta.txn.TxnDtos.TxnRequest;
 import java.time.format.DateTimeFormatter;
@@ -28,6 +30,7 @@ public class TxnService {
   private final TxnRepository txnRepository;
   private final UserRepository userRepository;
   private final AccountRepository accountRepository;
+  private final CardRepository cardRepository;
   private final CategoryRepository categoryRepository;
   private final AlertService alertService;
 
@@ -35,12 +38,14 @@ public class TxnService {
     TxnRepository txnRepository,
     UserRepository userRepository,
     AccountRepository accountRepository,
+    CardRepository cardRepository,
     CategoryRepository categoryRepository,
     AlertService alertService
   ) {
     this.txnRepository = txnRepository;
     this.userRepository = userRepository;
     this.accountRepository = accountRepository;
+    this.cardRepository = cardRepository;
     this.categoryRepository = categoryRepository;
     this.alertService = alertService;
   }
@@ -49,13 +54,41 @@ public class TxnService {
   public Txn create(Long userId, TxnRequest request) {
     User user = userRepository.findById(userId)
       .orElseThrow(() -> new IllegalArgumentException("usuário não encontrado"));
-    Account account = accountRepository.findByIdAndUserId(request.accountId(), userId)
-      .orElseThrow(() -> new IllegalArgumentException("conta não encontrada"));
+    PaymentType paymentType = request.paymentType() == null ? PaymentType.PIX : request.paymentType();
+    Card card = null;
+    Account account = null;
+    if (paymentType == PaymentType.PIX) {
+      if (request.accountId() == null) {
+        throw new IllegalArgumentException("conta é obrigatória para PIX");
+      }
+      if (request.cardId() != null) {
+        throw new IllegalArgumentException("cartão deve ser nulo para PIX");
+      }
+      account = accountRepository.findByIdAndUserId(request.accountId(), userId)
+        .orElseThrow(() -> new IllegalArgumentException("conta não encontrada"));
+    } else if (paymentType == PaymentType.CARD) {
+      if (request.cardId() == null) {
+        throw new IllegalArgumentException("cartão é obrigatório para pagamento com cartão");
+      }
+      if (request.accountId() != null) {
+        throw new IllegalArgumentException("conta deve ser nula para cartão");
+      }
+      card = cardRepository.findByIdAndUserId(request.cardId(), userId)
+        .orElseThrow(() -> new IllegalArgumentException("cartão não encontrado"));
+      if (!card.isActive()) {
+        throw new IllegalArgumentException("cartão desativado");
+      }
+      if (!Objects.equals(card.getAccount().getUser().getId(), userId)) {
+        throw new IllegalArgumentException("cartão não pertence ao usuário");
+      }
+    }
     validateCategory(userId, request.categoryId());
 
     Txn txn = new Txn();
     txn.setUser(user);
     txn.setAccount(account);
+    txn.setCard(card);
+    txn.setPaymentType(paymentType);
     txn.setAmountCents(request.amountCents());
     txn.setDirection(request.direction());
     txn.setDescription(request.description());
@@ -70,10 +103,11 @@ public class TxnService {
     txn.setImportBatchId(request.importBatchId());
     Txn saved = txnRepository.save(txn);
     logger.info(
-      "Transaction created userId={} txnId={} accountId={} amountCents={} direction={} occurredAt={} categoryId={}",
+      "Transaction created userId={} txnId={} accountId={} cardId={} amountCents={} direction={} occurredAt={} categoryId={}",
       userId,
       saved.getId(),
-      account.getId(),
+      account != null ? account.getId() : null,
+      card != null ? card.getId() : null,
       saved.getAmountCents(),
       saved.getDirection(),
       saved.getOccurredAt(),
@@ -93,6 +127,7 @@ public class TxnService {
         predicates.add(cb.equal(root.get("monthRef"), filter.monthRef()));
       }
       if (filter.accountId() != null) {
+        predicates.add(cb.equal(root.get("paymentType"), PaymentType.PIX));
         predicates.add(cb.equal(root.get("account").get("id"), filter.accountId()));
       }
       if (filter.categoryId() != null) {
@@ -123,11 +158,39 @@ public class TxnService {
   @Transactional
   public Txn update(Long userId, Long id, TxnRequest request) {
     Txn txn = get(userId, id);
-    Account account = accountRepository.findByIdAndUserId(request.accountId(), userId)
-      .orElseThrow(() -> new IllegalArgumentException("conta não encontrada"));
+    PaymentType paymentType = request.paymentType() == null ? PaymentType.PIX : request.paymentType();
+    Card card = null;
+    Account account = null;
+    if (paymentType == PaymentType.PIX) {
+      if (request.accountId() == null) {
+        throw new IllegalArgumentException("conta é obrigatória para PIX");
+      }
+      if (request.cardId() != null) {
+        throw new IllegalArgumentException("cartão deve ser nulo para PIX");
+      }
+      account = accountRepository.findByIdAndUserId(request.accountId(), userId)
+        .orElseThrow(() -> new IllegalArgumentException("conta não encontrada"));
+    } else if (paymentType == PaymentType.CARD) {
+      if (request.cardId() == null) {
+        throw new IllegalArgumentException("cartão é obrigatório para pagamento com cartão");
+      }
+      if (request.accountId() != null) {
+        throw new IllegalArgumentException("conta deve ser nula para cartão");
+      }
+      card = cardRepository.findByIdAndUserId(request.cardId(), userId)
+        .orElseThrow(() -> new IllegalArgumentException("cartão não encontrado"));
+      if (!card.isActive()) {
+        throw new IllegalArgumentException("cartão desativado");
+      }
+      if (!Objects.equals(card.getAccount().getUser().getId(), userId)) {
+        throw new IllegalArgumentException("cartão não pertence ao usuário");
+      }
+    }
     validateCategory(userId, request.categoryId());
 
     txn.setAccount(account);
+    txn.setCard(card);
+    txn.setPaymentType(paymentType);
     txn.setAmountCents(request.amountCents());
     txn.setDirection(request.direction());
     txn.setDescription(request.description());

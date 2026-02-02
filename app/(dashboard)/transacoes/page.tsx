@@ -21,6 +21,11 @@ interface Account {
   name: string
 }
 
+interface Card {
+  id: number
+  name: string
+}
+
 interface Category {
   id: number
   name: string
@@ -29,7 +34,9 @@ interface Category {
 
 interface Transaction {
   id: number
-  accountId: number
+  accountId: number | null
+  cardId: number | null
+  paymentType: "PIX" | "CARD"
   amountCents: number
   direction: "IN" | "OUT"
   description: string
@@ -39,7 +46,9 @@ interface Transaction {
 }
 
 const defaultTxnForm = {
+  paymentType: "PIX" as "PIX" | "CARD",
   accountId: undefined as string | undefined,
+  cardId: undefined as string | undefined,
   amountCents: "",
   direction: "OUT" as "IN" | "OUT",
   description: "",
@@ -67,6 +76,7 @@ export default function TransactionsPage() {
     status: "ALL",
   })
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [cards, setCards] = useState<Card[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [txns, setTxns] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,12 +98,14 @@ export default function TransactionsPage() {
   }, [filters])
 
   const loadSupporting = useCallback(async () => {
-    const [accountsData, categoriesData] = await Promise.all([
+    const [accountsData, categoriesData, cardsData] = await Promise.all([
       apiClient.get<Account[]>("/api/accounts"),
       apiClient.get<Category[]>("/api/categories"),
+      apiClient.get<Card[]>("/api/cards"),
     ])
     setAccounts(accountsData)
     setCategories(categoriesData)
+    setCards(cardsData)
   }, [])
 
   const loadTxns = useCallback(async () => {
@@ -125,7 +137,9 @@ export default function TransactionsPage() {
   const openEdit = (txn: Transaction) => {
     setEditing(txn)
     setForm({
-      accountId: String(txn.accountId),
+      paymentType: txn.paymentType || "PIX",
+      accountId: txn.accountId ? String(txn.accountId) : undefined,
+      cardId: txn.cardId ? String(txn.cardId) : undefined,
       amountCents: formatCentsToInput(txn.amountCents),
       direction: txn.direction,
       description: txn.description || "",
@@ -138,13 +152,19 @@ export default function TransactionsPage() {
 
   const submitTxn = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!form.accountId) {
+    if (form.paymentType === "PIX" && !form.accountId) {
       addToast("Selecione uma conta para a transacao.", "error")
+      return
+    }
+    if (form.paymentType === "CARD" && !form.cardId) {
+      addToast("Selecione um cartao para a transacao.", "error")
       return
     }
     try {
       const payload = {
-        accountId: Number(form.accountId),
+        paymentType: form.paymentType,
+        accountId: form.paymentType === "PIX" ? Number(form.accountId) : null,
+        cardId: form.paymentType === "CARD" ? Number(form.cardId) : null,
         amountCents: parseMoneyToCents(form.amountCents),
         direction: form.direction,
         description: form.description,
@@ -371,7 +391,7 @@ export default function TransactionsPage() {
                   <TableHeader>
                     <TableRow className="border-border">
                       <TableHead>Data</TableHead>
-                      <TableHead>Conta</TableHead>
+                      <TableHead>Conta/Cartão</TableHead>
                       <TableHead>Descricao</TableHead>
                       <TableHead>Categoria</TableHead>
                       <TableHead>Direcao</TableHead>
@@ -383,10 +403,15 @@ export default function TransactionsPage() {
                   <TableBody>
                     {txns.map((txn) => {
                       const category = txn.categoryId ? categories.find((c) => c.id === txn.categoryId) : null;
+                      const account = txn.accountId ? accounts.find((a) => a.id === txn.accountId) : undefined;
+                      const card = txn.cardId ? cards.find((c) => c.id === txn.cardId) : undefined;
+                      const paymentLabel = txn.paymentType === "CARD"
+                        ? `Cartão: ${card?.name || txn.cardId || "—"}`
+                        : account?.name || txn.accountId || "—";
                       return (
                         <TableRow key={txn.id} className="border-border">
                           <TableCell>{new Date(txn.occurredAt).toLocaleDateString("pt-BR")}</TableCell>
-                          <TableCell>{accounts.find((a) => a.id === txn.accountId)?.name || txn.accountId}</TableCell>
+                          <TableCell>{paymentLabel}</TableCell>
                           <TableCell>{txn.description || "—"}</TableCell>
                           <TableCell>
                             {category ? (
@@ -441,7 +466,11 @@ export default function TransactionsPage() {
               <div className="md:hidden space-y-3">
                 {txns.map((txn) => {
                   const category = txn.categoryId ? categories.find((c) => c.id === txn.categoryId) : null;
-                  const account = accounts.find((a) => a.id === txn.accountId);
+                  const account = txn.accountId ? accounts.find((a) => a.id === txn.accountId) : undefined;
+                  const card = txn.cardId ? cards.find((c) => c.id === txn.cardId) : undefined;
+                  const paymentLabel = txn.paymentType === "CARD"
+                    ? `Cartão: ${card?.name || txn.cardId || "—"}`
+                    : account?.name || txn.accountId || "—";
                   return (
                     <div
                       key={txn.id}
@@ -453,7 +482,7 @@ export default function TransactionsPage() {
                             {txn.description || "Sem descrição"}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {account?.name || "—"}
+                            {paymentLabel}
                           </p>
                         </div>
                         <div className={`text-right font-bold ${
@@ -515,18 +544,54 @@ export default function TransactionsPage() {
           </DialogHeader>
           <form onSubmit={submitTxn} className="space-y-4">
             <div className="space-y-2">
-              <Label>Conta</Label>
-              <Select value={form.accountId} onValueChange={(v) => setForm((prev) => ({ ...prev, accountId: v }))}>
+              <Label>Tipo</Label>
+              <Select
+                value={form.paymentType}
+                onValueChange={(value) => setForm((prev) => ({
+                  ...prev,
+                  paymentType: value as "PIX" | "CARD",
+                  accountId: value === "PIX" ? prev.accountId : undefined,
+                  cardId: value === "CARD" ? prev.cardId : undefined,
+                }))}
+              >
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.map((a) => (
-                    <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
-                  ))}
+                  <SelectItem value="PIX">PIX</SelectItem>
+                  <SelectItem value="CARD">Cartão</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {form.paymentType === "PIX" ? (
+              <div className="space-y-2">
+                <Label>Conta</Label>
+                <Select value={form.accountId} onValueChange={(v) => setForm((prev) => ({ ...prev, accountId: v }))}>
+                  <SelectTrigger className="bg-input border-border">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Cartão</Label>
+                <Select value={form.cardId} onValueChange={(v) => setForm((prev) => ({ ...prev, cardId: v }))}>
+                  <SelectTrigger className="bg-input border-border">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cards.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Valor</Label>

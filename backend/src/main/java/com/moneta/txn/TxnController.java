@@ -96,7 +96,9 @@ public class TxnController {
   private TxnResponse toResponse(Txn txn) {
     return new TxnResponse(
       txn.getId(),
-      txn.getAccount().getId(),
+      txn.getAccount() != null ? txn.getAccount().getId() : null,
+      txn.getCard() != null ? txn.getCard().getId() : null,
+      txn.getPaymentType(),
       txn.getAmountCents(),
       txn.getDirection(),
       txn.getDescription(),

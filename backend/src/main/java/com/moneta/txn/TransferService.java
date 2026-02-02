@@ -72,6 +72,7 @@ public class TransferService {
     Txn txn = new Txn();
     txn.setUser(user);
     txn.setAccount(account);
+    txn.setPaymentType(PaymentType.PIX);
     txn.setAmountCents(request.amountCents());
     txn.setDirection(direction);
     txn.setDescription(request.description());

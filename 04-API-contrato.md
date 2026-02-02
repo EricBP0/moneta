@@ -73,6 +73,59 @@ PATCH /accounts/{id}
 DELETE /accounts/{id}  (soft delete)
 
 
+## Cards
+GET /cards
+POST /cards
+Request:
+{
+  "accountId": 1,
+  "name": "Nubank",
+  "brand": "Mastercard",
+  "last4": "1234",
+  "limitAmount": 2500.00,
+  "closingDay": 5,
+  "dueDay": 12
+}
+
+Response:
+{
+  "id": 10,
+  "accountId": 1,
+  "name": "Nubank",
+  "brand": "Mastercard",
+  "last4": "1234",
+  "limitAmount": 2500.00,
+  "closingDay": 5,
+  "dueDay": 12,
+  "active": true
+}
+
+PUT /cards/{id}
+DELETE /cards/{id} (soft delete)
+
+GET /cards/{id}/invoice?year=YYYY&month=MM
+Response:
+{
+  "cardId": 10,
+  "month": 2,
+  "year": 2026,
+  "closingDate": "2026-02-05",
+  "dueDate": "2026-03-12",
+  "totalAmountCents": 120000,
+  "limitAmount": 2500.00,
+  "transactions": [
+    {
+      "id": 1,
+      "amountCents": 25000,
+      "direction": "OUT",
+      "description": "Posto Shell - gasolina",
+      "occurredAt": "2026-02-01T10:15:30Z",
+      "status": "POSTED"
+    }
+  ]
+}
+
+
 ## Categories/Subcategories
 GET /categories
 POST /categories
@@ -88,8 +141,7 @@ DELETE /subcategories/{id}
 ## Transactions
 Notas:
 - Transferência é registrada como duas transações com o mesmo transferGroupId.
-- txnType: NORMAL, TRANSFER, CARD_PURCHASE, CARD_PAYMENT.
-- Todos os txns com status POSTED afetam saldo (incluindo CARD_PURCHASE); CARD_PAYMENT afeta saldo e pode quitar card_bill.
+- paymentType: PIX ou CARD (PIX exige accountId; CARD exige cardId).
 
 GET /txns?month=YYYY-MM&accountId=&categoryId=&q=&direction=&status=
 Response:
@@ -97,6 +149,8 @@ Response:
   {
     "id": 1,
     "accountId": 10,
+    "cardId": null,
+    "paymentType": "PIX",
     "occurredAt": "2026-01-27T10:15:30Z",
     "description": "POSTO SHELL",
     "amountCents": 25000,
@@ -115,7 +169,9 @@ Response:
 POST /txns
 Request:
 {
+  "paymentType": "PIX",
   "accountId": 10,
+  "cardId": null,
   "occurredAt": "2026-01-27T10:15:30Z",
   "description": "Posto Shell - gasolina",
   "amountCents": 25000,
@@ -128,7 +184,9 @@ Request:
 PATCH /txns/{id}
 Request (exemplo):
 {
+  "paymentType": "PIX",
   "accountId": 10,
+  "cardId": null,
   "occurredAt": "2026-01-27T10:15:30Z",
   "description": "Posto Shell - gasolina",
   "amountCents": 25000,
