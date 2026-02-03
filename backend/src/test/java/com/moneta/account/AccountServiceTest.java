@@ -77,7 +77,7 @@ class AccountServiceTest {
     var result = accountService.listWithBalances(1L);
 
     assertThat(result).hasSize(1);
-    assertThat(result.getFirst().balanceCents()).isEqualTo(350L);
+    assertThat(result.get(0).balanceCents()).isEqualTo(350L);
   }
 
   private void setAccountId(Account account, Long id) {

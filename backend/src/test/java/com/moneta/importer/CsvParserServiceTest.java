@@ -21,7 +21,7 @@ class CsvParserServiceTest {
     );
 
     assertThat(result.rows()).hasSize(1);
-    var row = result.rows().getFirst();
+    var row = result.rows().get(0);
     assertThat(row.parsedDate()).hasToString("2024-01-05");
     assertThat(row.description()).isEqualTo("Padaria");
     assertThat(row.amountCents()).isEqualTo(1250L);
@@ -36,7 +36,7 @@ class CsvParserServiceTest {
       new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8))
     );
 
-    var row = result.rows().getFirst();
+    var row = result.rows().get(0);
     assertThat(row.amountCents()).isEqualTo(4210L);
     assertThat(row.direction()).isEqualTo(TxnDirection.OUT);
   }
@@ -49,7 +49,7 @@ class CsvParserServiceTest {
       new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8))
     );
 
-    var row = result.rows().getFirst();
+    var row = result.rows().get(0);
     assertThat(row.status()).isEqualTo(ImportRowStatus.ERROR);
     assertThat(row.errorMessage()).isNotBlank();
   }

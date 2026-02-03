@@ -55,10 +55,7 @@ export default function CartoesPage() {
       const data = await apiClient.get<Account[]>("/api/accounts")
       setAccounts(data)
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : "Erro ao carregar contas",
-        type: "error",
-      })
+      addToast(error instanceof Error ? error.message : "Erro ao carregar contas", "error")
     }
   }, [addToast])
 
@@ -68,10 +65,7 @@ export default function CartoesPage() {
       const data = await apiClient.get<CreditCard[]>("/api/cards")
       setCards(data)
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : "Erro ao carregar cartões",
-        type: "error",
-      })
+      addToast(error instanceof Error ? error.message : "Erro ao carregar cartões", "error")
     } finally {
       setLoading(false)
     }
@@ -112,29 +106,29 @@ export default function CartoesPage() {
     e.preventDefault()
 
     if (!form.accountId) {
-      addToast({ message: "Selecione uma conta", type: "error" })
+      addToast("Selecione uma conta", "error")
       return
     }
 
     if (!form.name.trim()) {
-      addToast({ message: "Nome do cartão é obrigatório", type: "error" })
+      addToast("Nome do cartão é obrigatório", "error")
       return
     }
 
     if (!form.limitAmount || parseFloat(form.limitAmount) < 0) {
-      addToast({ message: "Limite deve ser maior ou igual a zero", type: "error" })
+      addToast("Limite deve ser maior ou igual a zero", "error")
       return
     }
 
     const closingDay = parseInt(form.closingDay)
     if (isNaN(closingDay) || closingDay < 1 || closingDay > 31) {
-      addToast({ message: "Dia de fechamento deve estar entre 1 e 31", type: "error" })
+      addToast("Dia de fechamento deve estar entre 1 e 31", "error")
       return
     }
 
     const dueDay = parseInt(form.dueDay)
     if (isNaN(dueDay) || dueDay < 1 || dueDay > 31) {
-      addToast({ message: "Dia de vencimento deve estar entre 1 e 31", type: "error" })
+      addToast("Dia de vencimento deve estar entre 1 e 31", "error")
       return
     }
 
@@ -153,18 +147,15 @@ export default function CartoesPage() {
     try {
       if (editing) {
         await apiClient.patch(`/api/cards/${editing.id}`, payload)
-        addToast({ message: "Cartão atualizado com sucesso", type: "success" })
+        addToast("Cartão atualizado com sucesso", "success")
       } else {
         await apiClient.post("/api/cards", payload)
-        addToast({ message: "Cartão criado com sucesso", type: "success" })
+        addToast("Cartão criado com sucesso", "success")
       }
       closeForm()
       loadCards()
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : "Erro ao salvar cartão",
-        type: "error",
-      })
+      addToast(error instanceof Error ? error.message : "Erro ao salvar cartão", "error")
     }
   }
 
@@ -173,13 +164,10 @@ export default function CartoesPage() {
 
     try {
       await apiClient.delete(`/api/cards/${id}`)
-      addToast({ message: "Cartão excluído com sucesso", type: "success" })
+      addToast("Cartão excluído com sucesso", "success")
       loadCards()
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : "Erro ao excluir cartão",
-        type: "error",
-      })
+      addToast(error instanceof Error ? error.message : "Erro ao excluir cartão", "error")
     }
   }
 
