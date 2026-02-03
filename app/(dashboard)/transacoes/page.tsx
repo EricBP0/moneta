@@ -164,6 +164,12 @@ export default function TransactionsPage() {
       return
     }
     
+    // Validate required fields
+    if (!form.occurredAt) {
+      addToast("Data/hora é obrigatória.", "error")
+      return
+    }
+    
     try {
       interface TxnPayload {
         paymentType: "PIX" | "CARD"
@@ -182,7 +188,7 @@ export default function TransactionsPage() {
         amountCents: parseMoneyToCents(form.amountCents),
         direction: form.direction,
         description: form.description,
-        occurredAt: toIsoDateTime(form.occurredAt),
+        occurredAt: toIsoDateTime(form.occurredAt)!,
         status: form.status,
         categoryId: form.categoryId && form.categoryId !== "NONE" ? Number(form.categoryId) : null,
       }
@@ -230,12 +236,16 @@ export default function TransactionsPage() {
       addToast("As contas de origem e destino devem ser diferentes.", "error")
       return
     }
+    if (!transferForm.occurredAt) {
+      addToast("Data/hora é obrigatória.", "error")
+      return
+    }
     try {
       const payload = {
         fromAccountId: Number(transferForm.fromAccountId),
         toAccountId: Number(transferForm.toAccountId),
         amountCents: parseMoneyToCents(transferForm.amountCents),
-        occurredAt: toIsoDateTime(transferForm.occurredAt),
+        occurredAt: toIsoDateTime(transferForm.occurredAt)!,
         description: transferForm.description,
       }
       await apiClient.post("/api/txns/transfer", payload)
