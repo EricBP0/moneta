@@ -165,7 +165,19 @@ export default function TransactionsPage() {
     }
     
     try {
-      const payload: any = {
+      interface TxnPayload {
+        paymentType: "PIX" | "CARD"
+        accountId?: number
+        cardId?: number
+        amountCents: number
+        direction: "IN" | "OUT"
+        description: string
+        occurredAt: string
+        status: "CLEARED" | "PENDING"
+        categoryId: number | null
+      }
+      
+      const payload: TxnPayload = {
         paymentType: form.paymentType,
         amountCents: parseMoneyToCents(form.amountCents),
         direction: form.direction,

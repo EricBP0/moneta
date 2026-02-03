@@ -71,15 +71,18 @@ public class TxnService {
     } else if (paymentType == PaymentType.CARD) {
       card = cardRepository.findByIdAndUserIdAndIsActiveTrue(request.cardId(), userId)
         .orElseThrow(() -> new IllegalArgumentException("cartão não encontrado ou inativo"));
-      // Card must be linked to an account
-      account = card.getAccount();
+      // For CARD transactions, account is NOT set on the Txn entity to comply with DB constraint
+      // The account relationship is navigated through card.getAccount() when needed
     }
     
     validateCategory(userId, request.categoryId());
 
     Txn txn = new Txn();
     txn.setUser(user);
-    txn.setAccount(account);
+    // Only set account for PIX transactions
+    if (paymentType == PaymentType.PIX) {
+      txn.setAccount(account);
+    }
     txn.setPaymentType(paymentType);
     txn.setCard(card);
     txn.setAmountCents(request.amountCents());
@@ -167,13 +170,16 @@ public class TxnService {
     } else if (paymentType == PaymentType.CARD) {
       card = cardRepository.findByIdAndUserIdAndIsActiveTrue(request.cardId(), userId)
         .orElseThrow(() -> new IllegalArgumentException("cartão não encontrado ou inativo"));
-      // Card must be linked to an account
-      account = card.getAccount();
+      // For CARD transactions, account is NOT set on the Txn entity to comply with DB constraint
+      // The account relationship is navigated through card.getAccount() when needed
     }
     
     validateCategory(userId, request.categoryId());
 
-    txn.setAccount(account);
+    // Only set account for PIX transactions
+    if (paymentType == PaymentType.PIX) {
+      txn.setAccount(account);
+    }
     txn.setPaymentType(paymentType);
     txn.setCard(card);
     txn.setAmountCents(request.amountCents());

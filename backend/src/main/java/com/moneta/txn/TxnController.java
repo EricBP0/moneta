@@ -94,9 +94,16 @@ public class TxnController {
   }
 
   private TxnResponse toResponse(Txn txn) {
+    Long accountId = null;
+    if (txn.getAccount() != null) {
+      accountId = txn.getAccount().getId();
+    } else if (txn.getCard() != null && txn.getCard().getAccount() != null) {
+      accountId = txn.getCard().getAccount().getId();
+    }
+    
     return new TxnResponse(
       txn.getId(),
-      txn.getAccount() != null ? txn.getAccount().getId() : null,
+      accountId,
       txn.getCard() != null ? txn.getCard().getId() : null,
       txn.getPaymentType(),
       txn.getAmountCents(),

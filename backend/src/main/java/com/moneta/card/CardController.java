@@ -6,8 +6,11 @@ import com.moneta.card.CardDtos.UpdateCardRequest;
 import com.moneta.card.CardInvoiceDtos.CardInvoiceResponse;
 import com.moneta.config.UserPrincipal;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/cards")
+@Validated
 public class CardController {
   private final CardService cardService;
   private final CardInvoiceService cardInvoiceService;
@@ -76,8 +80,8 @@ public class CardController {
   public CardInvoiceResponse getInvoice(
     @AuthenticationPrincipal UserPrincipal principal,
     @PathVariable Long id,
-    @RequestParam int year,
-    @RequestParam int month
+    @RequestParam @Min(value = 1900, message = "ano deve estar entre 1900 e 2100") @Max(value = 2100, message = "ano deve estar entre 1900 e 2100") int year,
+    @RequestParam @Min(value = 1, message = "mês deve estar entre 1 e 12") @Max(value = 12, message = "mês deve estar entre 1 e 12") int month
   ) {
     return cardInvoiceService.getInvoice(principal.getId(), id, year, month);
   }
