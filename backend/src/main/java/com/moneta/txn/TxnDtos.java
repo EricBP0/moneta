@@ -1,5 +1,6 @@
 package com.moneta.txn;
 
+import com.moneta.card.PaymentType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.OffsetDateTime;
@@ -7,7 +8,9 @@ import java.util.UUID;
 
 public class TxnDtos {
   public record TxnRequest(
-    @NotNull(message = "conta é obrigatória") Long accountId,
+    Long accountId,
+    Long cardId,
+    PaymentType paymentType,
     @NotNull(message = "valor é obrigatório") @Positive(message = "valor deve ser positivo") Long amountCents,
     @NotNull(message = "direção é obrigatória") TxnDirection direction,
     String description,
@@ -22,10 +25,10 @@ public class TxnDtos {
   ) {
     /**
      * Backward-compatible constructor matching the previous TxnRequest arity
-     * (before importRowId and categorizationMode were added).
+     * (before paymentType, cardId, importRowId and categorizationMode were added).
      * <p>
-     * Existing call sites that do not supply importRowId or categorizationMode
-     * will use this constructor, which defaults those fields to null.
+     * Existing call sites that do not supply these fields
+     * will use this constructor, which defaults to PIX payment type.
      */
     public TxnRequest(
       Long accountId,
@@ -41,6 +44,8 @@ public class TxnDtos {
     ) {
       this(
         accountId,
+        null,
+        PaymentType.PIX,
         amountCents,
         direction,
         description,
@@ -59,6 +64,8 @@ public class TxnDtos {
   public record TxnResponse(
     Long id,
     Long accountId,
+    Long cardId,
+    PaymentType paymentType,
     Long amountCents,
     TxnDirection direction,
     String description,
