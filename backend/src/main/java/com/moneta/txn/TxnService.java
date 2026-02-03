@@ -4,6 +4,9 @@ import com.moneta.account.Account;
 import com.moneta.account.AccountRepository;
 import com.moneta.auth.User;
 import com.moneta.auth.UserRepository;
+import com.moneta.card.Card;
+import com.moneta.card.CardRepository;
+import com.moneta.card.PaymentType;
 import com.moneta.category.CategoryRepository;
 import com.moneta.alert.AlertService;
 import com.moneta.txn.TxnDtos.TxnFilter;
@@ -28,6 +31,7 @@ public class TxnService {
   private final TxnRepository txnRepository;
   private final UserRepository userRepository;
   private final AccountRepository accountRepository;
+  private final CardRepository cardRepository;
   private final CategoryRepository categoryRepository;
   private final AlertService alertService;
 
@@ -35,12 +39,14 @@ public class TxnService {
     TxnRepository txnRepository,
     UserRepository userRepository,
     AccountRepository accountRepository,
+    CardRepository cardRepository,
     CategoryRepository categoryRepository,
     AlertService alertService
   ) {
     this.txnRepository = txnRepository;
     this.userRepository = userRepository;
     this.accountRepository = accountRepository;
+    this.cardRepository = cardRepository;
     this.categoryRepository = categoryRepository;
     this.alertService = alertService;
   }
@@ -49,13 +55,36 @@ public class TxnService {
   public Txn create(Long userId, TxnRequest request) {
     User user = userRepository.findById(userId)
       .orElseThrow(() -> new IllegalArgumentException("usuário não encontrado"));
-    Account account = accountRepository.findByIdAndUserId(request.accountId(), userId)
-      .orElseThrow(() -> new IllegalArgumentException("conta não encontrada"));
+    
+    // Default to PIX if not specified
+    PaymentType paymentType = request.paymentType() != null ? request.paymentType() : PaymentType.PIX;
+    
+    // Validate payment type constraints
+    validatePaymentTypeConstraints(userId, paymentType, request.accountId(), request.cardId());
+    
+    Account account = null;
+    Card card = null;
+    
+    if (paymentType == PaymentType.PIX) {
+      account = accountRepository.findByIdAndUserId(request.accountId(), userId)
+        .orElseThrow(() -> new IllegalArgumentException("conta não encontrada"));
+    } else if (paymentType == PaymentType.CARD) {
+      card = cardRepository.findByIdAndUserIdAndIsActiveTrue(request.cardId(), userId)
+        .orElseThrow(() -> new IllegalArgumentException("cartão não encontrado ou inativo"));
+      // For CARD transactions, account is NOT set on the Txn entity to comply with DB constraint
+      // The account relationship is navigated through card.getAccount() when needed
+    }
+    
     validateCategory(userId, request.categoryId());
 
     Txn txn = new Txn();
     txn.setUser(user);
-    txn.setAccount(account);
+    // Only set account for PIX transactions
+    if (paymentType == PaymentType.PIX) {
+      txn.setAccount(account);
+    }
+    txn.setPaymentType(paymentType);
+    txn.setCard(card);
     txn.setAmountCents(request.amountCents());
     txn.setDirection(request.direction());
     txn.setDescription(request.description());
@@ -70,10 +99,12 @@ public class TxnService {
     txn.setImportBatchId(request.importBatchId());
     Txn saved = txnRepository.save(txn);
     logger.info(
-      "Transaction created userId={} txnId={} accountId={} amountCents={} direction={} occurredAt={} categoryId={}",
+      "Transaction created userId={} txnId={} accountId={} cardId={} paymentType={} amountCents={} direction={} occurredAt={} categoryId={}",
       userId,
       saved.getId(),
-      account.getId(),
+      account != null ? account.getId() : null,
+      card != null ? card.getId() : null,
+      paymentType,
       saved.getAmountCents(),
       saved.getDirection(),
       saved.getOccurredAt(),
@@ -123,11 +154,34 @@ public class TxnService {
   @Transactional
   public Txn update(Long userId, Long id, TxnRequest request) {
     Txn txn = get(userId, id);
-    Account account = accountRepository.findByIdAndUserId(request.accountId(), userId)
-      .orElseThrow(() -> new IllegalArgumentException("conta não encontrada"));
+    
+    // Default to PIX if not specified
+    PaymentType paymentType = request.paymentType() != null ? request.paymentType() : PaymentType.PIX;
+    
+    // Validate payment type constraints
+    validatePaymentTypeConstraints(userId, paymentType, request.accountId(), request.cardId());
+    
+    Account account = null;
+    Card card = null;
+    
+    if (paymentType == PaymentType.PIX) {
+      account = accountRepository.findByIdAndUserId(request.accountId(), userId)
+        .orElseThrow(() -> new IllegalArgumentException("conta não encontrada"));
+    } else if (paymentType == PaymentType.CARD) {
+      card = cardRepository.findByIdAndUserIdAndIsActiveTrue(request.cardId(), userId)
+        .orElseThrow(() -> new IllegalArgumentException("cartão não encontrado ou inativo"));
+      // For CARD transactions, account is NOT set on the Txn entity to comply with DB constraint
+      // The account relationship is navigated through card.getAccount() when needed
+    }
+    
     validateCategory(userId, request.categoryId());
 
-    txn.setAccount(account);
+    // Only set account for PIX transactions
+    if (paymentType == PaymentType.PIX) {
+      txn.setAccount(account);
+    }
+    txn.setPaymentType(paymentType);
+    txn.setCard(card);
     txn.setAmountCents(request.amountCents());
     txn.setDirection(request.direction());
     txn.setDescription(request.description());
@@ -168,5 +222,24 @@ public class TxnService {
     }
     // Return null for uncategorized transactions so they can be distinguished from manual ones
     return null;
+  }
+
+  private void validatePaymentTypeConstraints(Long userId, PaymentType paymentType, Long accountId, Long cardId) {
+    if (paymentType == PaymentType.PIX) {
+      if (accountId == null) {
+        throw new IllegalArgumentException("transação PIX requer uma conta");
+      }
+      if (cardId != null) {
+        throw new IllegalArgumentException("transação PIX não pode ter cartão");
+      }
+    } else if (paymentType == PaymentType.CARD) {
+      if (cardId == null) {
+        throw new IllegalArgumentException("transação CARD requer um cartão");
+      }
+      // For CARD transactions, account is derived from the card, not provided directly
+      if (accountId != null) {
+        throw new IllegalArgumentException("transação CARD não deve ter conta diretamente (é obtida via cartão)");
+      }
+    }
   }
 }

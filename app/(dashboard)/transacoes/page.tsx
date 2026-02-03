@@ -29,7 +29,9 @@ interface Category {
 
 interface Transaction {
   id: number
-  accountId: number
+  accountId: number | null
+  cardId: number | null
+  paymentType: "PIX" | "CARD"
   amountCents: number
   direction: "IN" | "OUT"
   description: string
@@ -38,8 +40,16 @@ interface Transaction {
   categoryId: number | null
 }
 
+interface CreditCard {
+  id: number
+  name: string
+  accountName: string
+}
+
 const defaultTxnForm = {
+  paymentType: "PIX" as "PIX" | "CARD",
   accountId: undefined as string | undefined,
+  cardId: undefined as string | undefined,
   amountCents: "",
   direction: "OUT" as "IN" | "OUT",
   description: "",
@@ -67,6 +77,7 @@ export default function TransactionsPage() {
     status: "ALL",
   })
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [cards, setCards] = useState<CreditCard[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [txns, setTxns] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,11 +99,13 @@ export default function TransactionsPage() {
   }, [filters])
 
   const loadSupporting = useCallback(async () => {
-    const [accountsData, categoriesData] = await Promise.all([
+    const [accountsData, cardsData, categoriesData] = await Promise.all([
       apiClient.get<Account[]>("/api/accounts"),
+      apiClient.get<CreditCard[]>("/api/cards"),
       apiClient.get<Category[]>("/api/categories"),
     ])
     setAccounts(accountsData)
+    setCards(cardsData)
     setCategories(categoriesData)
   }, [])
 
@@ -125,7 +138,9 @@ export default function TransactionsPage() {
   const openEdit = (txn: Transaction) => {
     setEditing(txn)
     setForm({
-      accountId: String(txn.accountId),
+      paymentType: txn.paymentType || "PIX",
+      accountId: txn.accountId ? String(txn.accountId) : undefined,
+      cardId: txn.cardId ? String(txn.cardId) : undefined,
       amountCents: formatCentsToInput(txn.amountCents),
       direction: txn.direction,
       description: txn.description || "",
@@ -138,20 +153,52 @@ export default function TransactionsPage() {
 
   const submitTxn = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!form.accountId) {
-      addToast("Selecione uma conta para a transacao.", "error")
+    
+    // Validate based on payment type
+    if (form.paymentType === "PIX" && !form.accountId) {
+      addToast("Selecione uma conta para transação PIX.", "error")
       return
     }
+    if (form.paymentType === "CARD" && !form.cardId) {
+      addToast("Selecione um cartão para transação CARD.", "error")
+      return
+    }
+    
+    // Validate required fields
+    if (!form.occurredAt) {
+      addToast("Data/hora é obrigatória.", "error")
+      return
+    }
+    
     try {
-      const payload = {
-        accountId: Number(form.accountId),
+      interface TxnPayload {
+        paymentType: "PIX" | "CARD"
+        accountId?: number
+        cardId?: number
+        amountCents: number
+        direction: "IN" | "OUT"
+        description: string
+        occurredAt: string
+        status: "CLEARED" | "PENDING"
+        categoryId: number | null
+      }
+      
+      const payload: TxnPayload = {
+        paymentType: form.paymentType,
         amountCents: parseMoneyToCents(form.amountCents),
         direction: form.direction,
         description: form.description,
-        occurredAt: toIsoDateTime(form.occurredAt),
+        occurredAt: toIsoDateTime(form.occurredAt)!,
         status: form.status,
         categoryId: form.categoryId && form.categoryId !== "NONE" ? Number(form.categoryId) : null,
       }
+      
+      if (form.paymentType === "PIX") {
+        payload.accountId = Number(form.accountId)
+      } else if (form.paymentType === "CARD") {
+        payload.cardId = Number(form.cardId)
+      }
+      
       if (editing) {
         await apiClient.patch(`/api/txns/${editing.id}`, payload)
         addToast("Transacao atualizada.", "success")
@@ -189,12 +236,16 @@ export default function TransactionsPage() {
       addToast("As contas de origem e destino devem ser diferentes.", "error")
       return
     }
+    if (!transferForm.occurredAt) {
+      addToast("Data/hora é obrigatória.", "error")
+      return
+    }
     try {
       const payload = {
         fromAccountId: Number(transferForm.fromAccountId),
         toAccountId: Number(transferForm.toAccountId),
         amountCents: parseMoneyToCents(transferForm.amountCents),
-        occurredAt: toIsoDateTime(transferForm.occurredAt),
+        occurredAt: toIsoDateTime(transferForm.occurredAt)!,
         description: transferForm.description,
       }
       await apiClient.post("/api/txns/transfer", payload)
@@ -386,7 +437,13 @@ export default function TransactionsPage() {
                       return (
                         <TableRow key={txn.id} className="border-border">
                           <TableCell>{new Date(txn.occurredAt).toLocaleDateString("pt-BR")}</TableCell>
-                          <TableCell>{accounts.find((a) => a.id === txn.accountId)?.name || txn.accountId}</TableCell>
+                          <TableCell>
+                            {txn.paymentType === "PIX" && txn.accountId ? 
+                              accounts.find((a) => a.id === txn.accountId)?.name || txn.accountId : 
+                              txn.paymentType === "CARD" && txn.cardId ?
+                              cards.find((c) => c.id === txn.cardId)?.name || txn.cardId :
+                              "—"}
+                          </TableCell>
                           <TableCell>{txn.description || "—"}</TableCell>
                           <TableCell>
                             {category ? (
@@ -441,7 +498,6 @@ export default function TransactionsPage() {
               <div className="md:hidden space-y-3">
                 {txns.map((txn) => {
                   const category = txn.categoryId ? categories.find((c) => c.id === txn.categoryId) : null;
-                  const account = accounts.find((a) => a.id === txn.accountId);
                   return (
                     <div
                       key={txn.id}
@@ -453,7 +509,11 @@ export default function TransactionsPage() {
                             {txn.description || "Sem descrição"}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {account?.name || "—"}
+                            {txn.paymentType === "PIX" && txn.accountId ? 
+                              accounts.find((a) => a.id === txn.accountId)?.name || "—" : 
+                              txn.paymentType === "CARD" && txn.cardId ?
+                              cards.find((c) => c.id === txn.cardId)?.name || "—" :
+                              "—"}
                           </p>
                         </div>
                         <div className={`text-right font-bold ${
@@ -515,18 +575,50 @@ export default function TransactionsPage() {
           </DialogHeader>
           <form onSubmit={submitTxn} className="space-y-4">
             <div className="space-y-2">
-              <Label>Conta</Label>
-              <Select value={form.accountId} onValueChange={(v) => setForm((prev) => ({ ...prev, accountId: v }))}>
+              <Label>Tipo de Pagamento</Label>
+              <Select value={form.paymentType} onValueChange={(v) => setForm((prev) => ({ ...prev, paymentType: v as "PIX" | "CARD", accountId: undefined, cardId: undefined }))}>
                 <SelectTrigger className="bg-input border-border">
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.map((a) => (
-                    <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
-                  ))}
+                  <SelectItem value="PIX">PIX</SelectItem>
+                  <SelectItem value="CARD">Cartão</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            
+            {form.paymentType === "PIX" && (
+              <div className="space-y-2">
+                <Label>Conta</Label>
+                <Select value={form.accountId} onValueChange={(v) => setForm((prev) => ({ ...prev, accountId: v }))}>
+                  <SelectTrigger className="bg-input border-border">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {form.paymentType === "CARD" && (
+              <div className="space-y-2">
+                <Label>Cartão</Label>
+                <Select value={form.cardId} onValueChange={(v) => setForm((prev) => ({ ...prev, cardId: v }))}>
+                  <SelectTrigger className="bg-input border-border">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cards.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>{c.name} ({c.accountName})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Valor</Label>

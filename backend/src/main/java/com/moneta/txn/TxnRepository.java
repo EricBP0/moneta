@@ -1,5 +1,6 @@
 package com.moneta.txn;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -150,4 +151,27 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     Long getCategoryId();
     Long getExpenseCents();
   }
+
+  /**
+   * Finds card transactions within a date range for invoice generation.
+   *
+   * @param cardId the card ID
+   * @param startDate start of billing cycle (inclusive)
+   * @param endDate end of billing cycle (exclusive)
+   * @return list of transactions ordered by date descending
+   */
+  @Query("""
+    select t from Txn t
+    where t.card.id = :cardId
+      and t.paymentType = com.moneta.card.PaymentType.CARD
+      and t.occurredAt >= :startDate
+      and t.occurredAt < :endDate
+      and t.isActive = true
+    order by t.occurredAt desc
+  """)
+  List<Txn> findCardTransactionsForInvoice(
+    @Param("cardId") Long cardId,
+    @Param("startDate") OffsetDateTime startDate,
+    @Param("endDate") OffsetDateTime endDate
+  );
 }

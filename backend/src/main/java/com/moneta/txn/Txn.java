@@ -2,6 +2,8 @@ package com.moneta.txn;
 
 import com.moneta.account.Account;
 import com.moneta.auth.User;
+import com.moneta.card.Card;
+import com.moneta.card.PaymentType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -28,8 +30,16 @@ public class Txn {
   private User user;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "account_id", nullable = false)
+  @JoinColumn(name = "account_id")
   private Account account;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "payment_type", nullable = false)
+  private PaymentType paymentType = PaymentType.PIX;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "card_id")
+  private Card card;
 
   @Column(name = "amount_cents", nullable = false)
   private Long amountCents;
@@ -101,6 +111,22 @@ public class Txn {
 
   public void setAccount(Account account) {
     this.account = account;
+  }
+
+  public PaymentType getPaymentType() {
+    return paymentType;
+  }
+
+  public void setPaymentType(PaymentType paymentType) {
+    this.paymentType = paymentType;
+  }
+
+  public Card getCard() {
+    return card;
+  }
+
+  public void setCard(Card card) {
+    this.card = card;
   }
 
   public Long getAmountCents() {
