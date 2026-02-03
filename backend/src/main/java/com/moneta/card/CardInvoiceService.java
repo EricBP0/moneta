@@ -3,6 +3,7 @@ package com.moneta.card;
 import com.moneta.txn.Txn;
 import com.moneta.txn.TxnRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -48,8 +49,9 @@ public class CardInvoiceService {
       endDateTime
     );
 
-    // Calculate total
+    // Calculate total (only OUT/expenses for credit cards)
     long totalAmountCents = transactions.stream()
+      .filter(txn -> txn.getDirection() == com.moneta.txn.TxnDirection.OUT)
       .mapToLong(Txn::getAmountCents)
       .sum();
 
@@ -65,7 +67,7 @@ public class CardInvoiceService {
       .toList();
 
     // Calculate available limit
-    BigDecimal totalSpent = BigDecimal.valueOf(totalAmountCents).divide(BigDecimal.valueOf(100));
+    BigDecimal totalSpent = BigDecimal.valueOf(totalAmountCents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     BigDecimal availableLimit = card.getLimitAmount().subtract(totalSpent);
     if (availableLimit.compareTo(BigDecimal.ZERO) < 0) {
       availableLimit = BigDecimal.ZERO;

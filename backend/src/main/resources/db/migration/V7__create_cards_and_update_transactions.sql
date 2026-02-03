@@ -35,17 +35,17 @@ ALTER TABLE txn ALTER COLUMN payment_type SET NOT NULL;
 
 -- Add check constraints to enforce payment type rules
 -- PIX transactions must have account_id and not have card_id
--- CARD transactions must have card_id and not have account_id (we'll keep account_id nullable for backwards compatibility)
+-- CARD transactions must have card_id and account_id must be NULL
 ALTER TABLE txn ADD CONSTRAINT chk_txn_payment_type_pix
   CHECK (
     payment_type != 'PIX' OR 
-    (payment_type = 'PIX' AND card_id IS NULL)
+    (payment_type = 'PIX' AND card_id IS NULL AND account_id IS NOT NULL)
   );
 
 ALTER TABLE txn ADD CONSTRAINT chk_txn_payment_type_card
   CHECK (
     payment_type != 'CARD' OR 
-    (payment_type = 'CARD' AND card_id IS NOT NULL)
+    (payment_type = 'CARD' AND card_id IS NOT NULL AND account_id IS NULL)
   );
 
 -- Add index for invoice queries (card transactions by date range)

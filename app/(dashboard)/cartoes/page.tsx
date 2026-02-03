@@ -96,7 +96,7 @@ export default function CartoesPage() {
       name: card.name,
       brand: card.brand || "",
       last4: card.last4 || "",
-      limitAmount: formatCentsToInput(parseFloat(card.limitAmount) * 100),
+      limitAmount: card.limitAmount, // Already in decimal format from backend
       closingDay: String(card.closingDay),
       dueDay: String(card.dueDay),
     })

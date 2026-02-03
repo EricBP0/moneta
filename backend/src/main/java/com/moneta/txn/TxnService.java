@@ -230,6 +230,7 @@ public class TxnService {
       if (cardId == null) {
         throw new IllegalArgumentException("transação CARD requer um cartão");
       }
+      // For CARD transactions, account is derived from the card, not provided directly
       if (accountId != null) {
         throw new IllegalArgumentException("transação CARD não deve ter conta diretamente (é obtida via cartão)");
       }

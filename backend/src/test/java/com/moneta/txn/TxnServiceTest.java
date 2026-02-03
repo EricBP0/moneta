@@ -11,6 +11,7 @@ import com.moneta.account.AccountRepository;
 import com.moneta.alert.AlertService;
 import com.moneta.auth.User;
 import com.moneta.auth.UserRepository;
+import com.moneta.card.CardRepository;
 import com.moneta.category.CategoryRepository;
 import com.moneta.txn.TxnDtos.TxnFilter;
 import com.moneta.txn.TxnDtos.TxnRequest;
@@ -37,6 +38,9 @@ class TxnServiceTest {
   private AccountRepository accountRepository;
 
   @Mock
+  private CardRepository cardRepository;
+
+  @Mock
   private CategoryRepository categoryRepository;
 
   @Mock
@@ -46,7 +50,7 @@ class TxnServiceTest {
 
   @BeforeEach
   void setup() {
-    txnService = new TxnService(txnRepository, userRepository, accountRepository, categoryRepository, alertService);
+    txnService = new TxnService(txnRepository, userRepository, accountRepository, cardRepository, categoryRepository, alertService);
   }
 
   @Test
