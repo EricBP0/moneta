@@ -47,9 +47,15 @@ const buildHeaders = (options: RequestOptions = {}, method: string, hasBody: boo
   const headers: Record<string, string> = { ...options.headers }
   if (!options.skipAuth) {
     const token = getAccessToken()
-    if (token) {
-      headers.Authorization = `Bearer ${token}`
+    if (!token) {
+      // No token available - user needs to log in
+      clearSession()
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.assign('/login')
+      }
+      throw new Error('Authentication required. Please log in.')
     }
+    headers.Authorization = `Bearer ${token}`
   }
   if (!options.isForm && method !== 'GET' && hasBody) {
     headers['Content-Type'] = 'application/json'
