@@ -117,13 +117,15 @@ const refreshSession = async (): Promise<AuthResponse> => {
 }
 
 let refreshPromise: Promise<AuthResponse> | null = null
+let redirectingToLogin = false
 
 const request = async <T>(method: string, path: string, body?: unknown, options: RequestOptions = {}): Promise<T> => {
   // Check for authentication token before making the request
   if (!options.skipAuth && !getAccessToken()) {
     // No token available - clear session and redirect to login
     clearSession()
-    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login') && !redirectingToLogin) {
+      redirectingToLogin = true
       window.location.assign('/login')
     }
     throw new Error('Authentication required. Please log in.')
@@ -148,7 +150,8 @@ const request = async <T>(method: string, path: string, body?: unknown, options:
       clearSession()
       // Auto-logout on 401: clear session and redirect to login
       // Avoid loop by checking if already on login page
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login') && !redirectingToLogin) {
+        redirectingToLogin = true
         window.location.assign('/login')
       }
       throw new Error('Session expired')
