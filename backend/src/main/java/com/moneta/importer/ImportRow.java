@@ -67,6 +67,9 @@ public class ImportRow {
   @Column(name = "resolved_subcategory_id")
   private Long resolvedSubcategoryId;
 
+  @Column(name = "resolved_account_id")
+  private Long resolvedAccountId;
+
   @Column(name = "resolved_card_id")
   private Long resolvedCardId;
 
@@ -195,6 +198,14 @@ public class ImportRow {
 
   public void setResolvedSubcategoryId(Long resolvedSubcategoryId) {
     this.resolvedSubcategoryId = resolvedSubcategoryId;
+  }
+
+  public Long getResolvedAccountId() {
+    return resolvedAccountId;
+  }
+
+  public void setResolvedAccountId(Long resolvedAccountId) {
+    this.resolvedAccountId = resolvedAccountId;
   }
 
   public Long getResolvedCardId() {

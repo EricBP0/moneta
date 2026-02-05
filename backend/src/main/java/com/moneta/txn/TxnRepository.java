@@ -201,4 +201,37 @@ public interface TxnRepository extends JpaRepository<Txn, Long>, JpaSpecificatio
     @Param("startDate") OffsetDateTime startDate,
     @Param("endDate") OffsetDateTime endDate
   );
+
+  /**
+   * Calculates the total amount spent on multiple cards within a date range.
+   * Only counts EXPENSE transactions with POSTED or CLEARED status.
+   * Returns a map of card ID to total spent in cents.
+   *
+   * @param cardIds list of card IDs
+   * @param startDate start of billing cycle (inclusive)
+   * @param endDate end of billing cycle (exclusive)
+   * @return projection with cardId and total spent
+   */
+  @Query("""
+    select t.card.id as cardId, coalesce(sum(t.amountCents), 0) as totalCents
+    from Txn t
+    where t.card.id in :cardIds
+      and t.paymentType = com.moneta.card.PaymentType.CARD
+      and t.direction = com.moneta.txn.TxnDirection.OUT
+      and t.status in (com.moneta.txn.TxnStatus.POSTED, com.moneta.txn.TxnStatus.CLEARED)
+      and t.occurredAt >= :startDate
+      and t.occurredAt < :endDate
+      and t.isActive = true
+    group by t.card.id
+  """)
+  List<CardExpenseSummary> sumCardExpensesInCycleBatch(
+    @Param("cardIds") List<Long> cardIds,
+    @Param("startDate") OffsetDateTime startDate,
+    @Param("endDate") OffsetDateTime endDate
+  );
+
+  interface CardExpenseSummary {
+    Long getCardId();
+    Long getTotalCents();
+  }
 }

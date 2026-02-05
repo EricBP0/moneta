@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -39,10 +40,17 @@ public class DashboardWidgetConfig {
   private String settingsJson;
 
   @Column(name = "created_at", nullable = false)
-  private OffsetDateTime createdAt = OffsetDateTime.now();
+  private OffsetDateTime createdAt;
 
   @Column(name = "updated_at")
   private OffsetDateTime updatedAt;
+
+  @PrePersist
+  protected void onCreate() {
+    if (createdAt == null) {
+      createdAt = OffsetDateTime.now();
+    }
+  }
 
   public Long getId() {
     return id;

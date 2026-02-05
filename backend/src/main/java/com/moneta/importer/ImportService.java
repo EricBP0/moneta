@@ -127,7 +127,9 @@ public class ImportService {
         // Resolve account or card based on payment type
         if (parsedRow.paymentType() == PaymentType.PIX) {
           Optional<Long> resolvedAccountId = resolveAccount(userId, parsedRow.accountName());
-          if (resolvedAccountId.isEmpty()) {
+          if (resolvedAccountId.isPresent()) {
+            row.setResolvedAccountId(resolvedAccountId.get());
+          } else {
             row.setStatus(ImportRowStatus.ERROR);
             row.setErrorMessage("conta não encontrada: " + parsedRow.accountName());
           }
@@ -142,10 +144,13 @@ public class ImportService {
         }
         
         if (row.getStatus() == ImportRowStatus.PARSED) {
+          Long accountOrCardId = parsedRow.paymentType() == PaymentType.PIX 
+            ? row.getResolvedAccountId() 
+            : row.getResolvedCardId();
           String hash = buildHash(
             userId,
             parsedRow.paymentType(),
-            parsedRow.paymentType() == PaymentType.PIX ? accountId : row.getResolvedCardId(),
+            accountOrCardId,
             parsedRow.parsedDate(),
             parsedRow.amountCents(),
             parsedRow.direction(),
@@ -233,9 +238,14 @@ public class ImportService {
         continue;
       }
       
-      Long accountOrCardId = row.getPaymentType() == PaymentType.PIX 
-        ? batch.getAccount().getId() 
-        : row.getResolvedCardId();
+      Long accountOrCardId;
+      if (row.getPaymentType() == PaymentType.PIX) {
+        accountOrCardId = row.getResolvedAccountId() != null 
+          ? row.getResolvedAccountId() 
+          : batch.getAccount().getId();
+      } else {
+        accountOrCardId = row.getResolvedCardId();
+      }
       
       String hash = row.getHash();
       if (hash == null) {
@@ -379,7 +389,7 @@ public class ImportService {
       return accountRepository.findByIdAndUserId(id, userId).map(Account::getId);
     } catch (NumberFormatException e) {
       // Not an ID, try by name
-      return accountRepository.findByUserIdAndNameIgnoreCase(userId, name.trim())
+      return accountRepository.findByUserIdAndNameIgnoreCaseAndIsActiveTrue(userId, name.trim())
         .map(Account::getId);
     }
   }
@@ -394,7 +404,7 @@ public class ImportService {
       return cardRepository.findByIdAndUserIdAndIsActiveTrue(id, userId).map(Card::getId);
     } catch (NumberFormatException e) {
       // Not an ID, try by name
-      return cardRepository.findByUserIdAndNameIgnoreCase(userId, name.trim())
+      return cardRepository.findByUserIdAndNameIgnoreCaseAndIsActiveTrue(userId, name.trim())
         .map(Card::getId);
     }
   }
@@ -456,7 +466,12 @@ public class ImportService {
     txn.setPaymentType(row.getPaymentType());
     
     if (row.getPaymentType() == PaymentType.PIX) {
-      txn.setAccount(batch.getAccount());
+      Long accountId = row.getResolvedAccountId() != null 
+        ? row.getResolvedAccountId() 
+        : batch.getAccount().getId();
+      Account account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new IllegalStateException("conta não encontrada"));
+      txn.setAccount(account);
       txn.setCard(null);
     } else if (row.getPaymentType() == PaymentType.CARD) {
       Card card = cardRepository.findById(row.getResolvedCardId())

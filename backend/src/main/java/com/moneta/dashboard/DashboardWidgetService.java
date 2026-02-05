@@ -5,6 +5,7 @@ import com.moneta.auth.UserRepository;
 import com.moneta.dashboard.DashboardDtos.WidgetConfigDto;
 import com.moneta.dashboard.DashboardDtos.WidgetConfigUpdateRequest;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -98,6 +99,7 @@ public class DashboardWidgetService {
       .collect(Collectors.toMap(DashboardWidgetConfig::getWidgetKey, config -> config));
 
     // Update or create configs
+    List<DashboardWidgetConfig> configsToSave = new ArrayList<>();
     for (WidgetConfigDto dto : request.widgets()) {
       DashboardWidgetConfig config = existingMap.get(dto.widgetKey());
       if (config == null) {
@@ -109,14 +111,16 @@ public class DashboardWidgetService {
       config.setDisplayOrder(dto.displayOrder());
       config.setSettingsJson(dto.settingsJson());
       config.setUpdatedAt(OffsetDateTime.now());
-      repository.save(config);
+      configsToSave.add(config);
     }
+    repository.saveAll(configsToSave);
 
     // Delete any widgets not in the request
-    for (DashboardWidgetConfig config : existingConfigs) {
-      if (!requestKeys.contains(config.getWidgetKey())) {
-        repository.delete(config);
-      }
+    List<DashboardWidgetConfig> configsToDelete = existingConfigs.stream()
+      .filter(config -> !requestKeys.contains(config.getWidgetKey()))
+      .toList();
+    if (!configsToDelete.isEmpty()) {
+      repository.deleteAll(configsToDelete);
     }
 
     return getWidgetConfig(userId);

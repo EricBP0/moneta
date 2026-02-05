@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Progress } from "@/components/ui/progress"
 import { Checkbox } from "@/components/ui/checkbox"
-import { WidgetConfig, WIDGET_KEYS, WidgetKey } from "@/lib/types/dashboard"
+import { WidgetConfig, WIDGET_KEYS } from "@/lib/types/dashboard"
 import { CardLimitsWidget } from "@/components/dashboard/CardLimitsWidget"
 import {
   TrendingUp,
@@ -181,7 +181,6 @@ export default function DashboardPage() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [cardOrder, setCardOrder] = useState<DashboardCardType[]>(DEFAULT_CARD_ORDER)
   const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfig[]>([])
-  const [widgetsLoading, setWidgetsLoading] = useState(true)
   const { addToast } = useAppToast()
 
   const sensors = useSensors(
@@ -219,7 +218,6 @@ export default function DashboardPage() {
   }, [month, addToast])
 
   const loadWidgetConfigs = useCallback(async () => {
-    setWidgetsLoading(true)
     try {
       const configs = await apiClient.get<WidgetConfig[]>("/api/dashboard/widgets")
       setWidgetConfigs(configs || [])
@@ -259,7 +257,6 @@ export default function DashboardPage() {
         }
       }
     } finally {
-      setWidgetsLoading(false)
     }
   }, [])
 

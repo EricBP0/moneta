@@ -11,7 +11,9 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -149,22 +151,52 @@ public class CardService {
   public List<CardDtos.CardLimitSummary> getLimitSummary(Long userId, LocalDate asOfDate) {
     LocalDate effectiveDate = asOfDate != null ? asOfDate : LocalDate.now();
     List<Card> cards = cardRepository.findAllByUserIdAndIsActiveTrue(userId);
-    List<CardDtos.CardLimitSummary> summaries = new ArrayList<>();
+    
+    if (cards.isEmpty()) {
+      return List.of();
+    }
 
+    // Group cards by their billing cycle to batch queries
+    Map<String, List<Card>> cardsByPeriod = new HashMap<>();
+    Map<Long, CardInvoiceDtos.BillingCycle> cycleByCardId = new HashMap<>();
+    
     for (Card card : cards) {
       CardInvoiceDtos.BillingCycle cycle = billingCycleService.calculateBillingCycle(
         effectiveDate,
         card.getClosingDay(),
         card.getDueDay()
       );
+      cycleByCardId.put(card.getId(), cycle);
+      
+      // Create a key for grouping cards with same cycle dates
+      String periodKey = cycle.startDate() + "_" + cycle.endDate();
+      cardsByPeriod.computeIfAbsent(periodKey, k -> new ArrayList<>()).add(card);
+    }
 
+    // Batch query for each unique billing period
+    Map<Long, Long> usedCentsByCardId = new HashMap<>();
+    for (List<Card> periodCards : cardsByPeriod.values()) {
+      if (periodCards.isEmpty()) continue;
+      
+      Card firstCard = periodCards.get(0);
+      CardInvoiceDtos.BillingCycle cycle = cycleByCardId.get(firstCard.getId());
       OffsetDateTime cycleStart = cycle.startDate().atStartOfDay().atOffset(ZoneOffset.UTC);
       OffsetDateTime cycleEnd = cycle.endDate().atStartOfDay().atOffset(ZoneOffset.UTC);
-
-      Long usedCents = txnRepository.sumCardExpensesInCycle(card.getId(), cycleStart, cycleEnd);
-      if (usedCents == null) {
-        usedCents = 0L;
+      
+      List<Long> cardIds = periodCards.stream().map(Card::getId).toList();
+      List<TxnRepository.CardExpenseSummary> expenses = 
+        txnRepository.sumCardExpensesInCycleBatch(cardIds, cycleStart, cycleEnd);
+      
+      for (TxnRepository.CardExpenseSummary expense : expenses) {
+        usedCentsByCardId.put(expense.getCardId(), expense.getTotalCents());
       }
+    }
+
+    // Build summaries
+    List<CardDtos.CardLimitSummary> summaries = new ArrayList<>();
+    for (Card card : cards) {
+      CardInvoiceDtos.BillingCycle cycle = cycleByCardId.get(card.getId());
+      Long usedCents = usedCentsByCardId.getOrDefault(card.getId(), 0L);
 
       long limitCents = card.getLimitAmount()
         .multiply(BigDecimal.valueOf(100))

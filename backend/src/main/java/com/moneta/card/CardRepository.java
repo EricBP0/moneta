@@ -14,5 +14,5 @@ public interface CardRepository extends JpaRepository<Card, Long> {
   @EntityGraph(attributePaths = {"account"})
   Optional<Card> findByIdAndUserIdAndIsActiveTrue(Long id, Long userId);
   
-  Optional<Card> findByUserIdAndNameIgnoreCase(Long userId, String name);
+  Optional<Card> findByUserIdAndNameIgnoreCaseAndIsActiveTrue(Long userId, String name);
 }
