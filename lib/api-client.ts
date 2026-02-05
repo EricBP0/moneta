@@ -47,18 +47,9 @@ const buildHeaders = (options: RequestOptions = {}, method: string, hasBody: boo
   const headers: Record<string, string> = { ...options.headers }
   if (!options.skipAuth) {
     const token = getAccessToken()
-    if (!token) {
-      // No token available - redirect to login
-      // Note: We don't clear the session here as the token might just not be loaded yet
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-        // Use setTimeout to ensure the error is thrown after redirect is queued
-        setTimeout(() => {
-          window.location.assign('/login')
-        }, 0)
-      }
-      throw new Error('Authentication required. Please log in.')
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
     }
-    headers.Authorization = `Bearer ${token}`
   }
   if (!options.isForm && method !== 'GET' && hasBody) {
     headers['Content-Type'] = 'application/json'
@@ -128,6 +119,16 @@ const refreshSession = async (): Promise<AuthResponse> => {
 let refreshPromise: Promise<AuthResponse> | null = null
 
 const request = async <T>(method: string, path: string, body?: unknown, options: RequestOptions = {}): Promise<T> => {
+  // Check for authentication token before making the request
+  if (!options.skipAuth && !getAccessToken()) {
+    // No token available - clear session and redirect to login
+    clearSession()
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+      window.location.assign('/login')
+    }
+    throw new Error('Authentication required. Please log in.')
+  }
+
   const config: RequestInit = {
     method,
     headers: buildHeaders(options, method, body !== undefined),
