@@ -97,6 +97,8 @@ interface Category {
 
 type DashboardCardType = "accounts" | "categories" | "budgets" | "alerts" | "goals" | "card_limits"
 
+// Note: SUMMARY widget controls both 'accounts' and 'categories' cards
+// These two cards are always shown together as part of the summary section
 const WIDGET_KEY_TO_CARD_TYPE: Record<string, DashboardCardType> = {
   [WIDGET_KEYS.SUMMARY]: "accounts",
   [WIDGET_KEYS.BUDGETS]: "budgets",
@@ -107,7 +109,7 @@ const WIDGET_KEY_TO_CARD_TYPE: Record<string, DashboardCardType> = {
 
 const CARD_TYPE_TO_WIDGET_KEY: Record<DashboardCardType, string> = {
   accounts: WIDGET_KEYS.SUMMARY,
-  categories: WIDGET_KEYS.SUMMARY,
+  categories: WIDGET_KEYS.SUMMARY, // Both accounts and categories map to SUMMARY
   budgets: WIDGET_KEYS.BUDGETS,
   alerts: WIDGET_KEYS.ALERTS,
   goals: WIDGET_KEYS.GOALS,
@@ -263,7 +265,7 @@ export default function DashboardPage() {
 
   const saveWidgetConfigs = useCallback(async (configs: WidgetConfig[]) => {
     try {
-      await apiClient.put("/api/dashboard/widgets", configs)
+      await apiClient.put("/api/dashboard/widgets", { widgets: configs })
       addToast("Configuração salva com sucesso.", "success")
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao salvar configuração"

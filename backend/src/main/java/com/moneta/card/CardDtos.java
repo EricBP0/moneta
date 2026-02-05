@@ -46,7 +46,7 @@ public class CardDtos {
   public record CardLimitSummary(
     Long cardId,
     String cardName,
-    BigDecimal limitTotal,
+    long limitTotal,
     long usedCents,
     long availableCents,
     double percentUsed,

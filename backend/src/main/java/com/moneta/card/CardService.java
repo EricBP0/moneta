@@ -172,7 +172,7 @@ public class CardService {
       summaries.add(new CardDtos.CardLimitSummary(
         card.getId(),
         card.getName(),
-        card.getLimitAmount(),
+        limitCents,
         usedCents,
         availableCents,
         percentUsed,
