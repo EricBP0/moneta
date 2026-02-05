@@ -42,4 +42,15 @@ public class CardDtos {
     boolean isActive,
     OffsetDateTime createdAt
   ) {}
+
+  public record CardLimitSummary(
+    Long cardId,
+    String cardName,
+    BigDecimal limitTotal,
+    long usedCents,
+    long availableCents,
+    double percentUsed,
+    String cycleStart,
+    String cycleEnd
+  ) {}
 }
