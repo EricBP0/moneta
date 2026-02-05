@@ -124,9 +124,18 @@ const refreshSession = async (): Promise<AuthResponse> => {
 let refreshPromise: Promise<AuthResponse> | null = null
 
 const shouldRedirectToLogin = (): boolean => {
-  return typeof window !== 'undefined' && 
-         !window.location.pathname.startsWith('/login') && 
-         !redirectingToLogin
+  if (typeof window === 'undefined' || window.location.pathname.startsWith('/login')) {
+    return false
+  }
+  
+  // Set flag atomically - if it's already true, don't redirect again
+  if (redirectingToLogin) {
+    return false
+  }
+  
+  // Set flag before redirecting to prevent race conditions
+  redirectingToLogin = true
+  return true
 }
 
 const request = async <T>(method: string, path: string, body?: unknown, options: RequestOptions = {}): Promise<T> => {
@@ -135,7 +144,6 @@ const request = async <T>(method: string, path: string, body?: unknown, options:
     // No token available - clear session and redirect to login
     clearSession()
     if (shouldRedirectToLogin()) {
-      redirectingToLogin = true
       window.location.assign('/login')
     }
     throw new Error('Authentication required. Please log in.')
@@ -160,7 +168,6 @@ const request = async <T>(method: string, path: string, body?: unknown, options:
       clearSession()
       // Auto-logout on 401: clear session and redirect to login
       if (shouldRedirectToLogin()) {
-        redirectingToLogin = true
         window.location.assign('/login')
       }
       throw new Error('Session expired')
