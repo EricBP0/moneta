@@ -213,7 +213,7 @@ public class CsvParserService {
         null,
         null,
         null,
-        null,
+        PaymentType.PIX, // Default payment type for error rows to satisfy NOT NULL constraint
         null,
         null,
         null,
