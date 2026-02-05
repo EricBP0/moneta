@@ -48,10 +48,13 @@ const buildHeaders = (options: RequestOptions = {}, method: string, hasBody: boo
   if (!options.skipAuth) {
     const token = getAccessToken()
     if (!token) {
-      // No token available - user needs to log in
-      clearSession()
+      // No token available - redirect to login
+      // Note: We don't clear the session here as the token might just not be loaded yet
       if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-        window.location.assign('/login')
+        // Use setTimeout to ensure the error is thrown after redirect is queued
+        setTimeout(() => {
+          window.location.assign('/login')
+        }, 0)
       }
       throw new Error('Authentication required. Please log in.')
     }
