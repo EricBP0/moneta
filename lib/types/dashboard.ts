@@ -15,7 +15,7 @@ export interface CardLimitSummary {
   availableCents: number
   percentUsed: number
   cycleStart: string
-  cycleEnd: string
+  cycleClosing: string
 }
 
 export const WIDGET_KEYS = {

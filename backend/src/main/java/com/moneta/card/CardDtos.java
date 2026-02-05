@@ -51,6 +51,6 @@ public class CardDtos {
     long availableCents,
     double percentUsed,
     String cycleStart,
-    String cycleEnd
+    String cycleClosing
   ) {}
 }

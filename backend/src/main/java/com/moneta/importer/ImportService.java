@@ -400,9 +400,7 @@ public class ImportService {
   }
 
   private Set<String> buildExistingTxnHashes(Long userId) {
-    List<Txn> txns = txnRepository.findAll().stream()
-      .filter(t -> t.getUser().getId().equals(userId) && t.isActive())
-      .toList();
+    List<Txn> txns = txnRepository.findAllByUserIdAndIsActiveTrue(userId);
     Set<String> hashes = new HashSet<>();
     for (Txn txn : txns) {
       LocalDate date = txn.getOccurredAt().toLocalDate();
