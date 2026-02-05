@@ -205,7 +205,11 @@ export default function ImportPage() {
 
           <div>
             <h3 className="font-medium text-foreground mb-2">Formato CSV esperado</h3>
-            <div className="p-3 rounded-lg bg-secondary border border-border font-mono text-xs overflow-x-auto">
+            <div 
+              className="p-3 rounded-lg bg-secondary border border-border font-mono text-xs overflow-x-auto"
+              role="region"
+              aria-label="Exemplo de formato CSV com colunas: date, description, amount, payment_method, account, card, category"
+            >
               <p className="text-muted-foreground mb-2"># Cabeçalho (obrigatório)</p>
               <p className="text-foreground whitespace-nowrap">date,description,amount,payment_method,account,card,category</p>
               <p className="text-muted-foreground mt-2 mb-2"># Exemplos de linhas</p>
