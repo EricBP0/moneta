@@ -128,12 +128,12 @@ const shouldRedirectToLogin = (): boolean => {
     return false
   }
   
-  // Set flag atomically - if it's already true, don't redirect again
+  // Check flag so we only perform a single redirect to the login page
   if (redirectingToLogin) {
     return false
   }
   
-  // Set flag before redirecting to prevent race conditions
+  // Set flag before redirecting to avoid triggering multiple redirects
   redirectingToLogin = true
   return true
 }
@@ -146,7 +146,7 @@ const request = async <T>(method: string, path: string, body?: unknown, options:
     if (shouldRedirectToLogin()) {
       window.location.assign('/login')
     }
-    throw new Error('Authentication required. Please log in.')
+    throw new Error('Autenticação necessária. Por favor, faça login.')
   }
 
   const config: RequestInit = {
@@ -170,7 +170,7 @@ const request = async <T>(method: string, path: string, body?: unknown, options:
       if (shouldRedirectToLogin()) {
         window.location.assign('/login')
       }
-      throw new Error('Session expired')
+      throw new Error('Sessão expirada')
     }
   }
   return handleResponse(response)
