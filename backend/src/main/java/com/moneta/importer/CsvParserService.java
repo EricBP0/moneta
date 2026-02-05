@@ -62,6 +62,11 @@ public class CsvParserService {
     String amountValue = getValue(record, headerMap, "amount");
     String category = getOptionalValue(record, headerMap, "category").orElse(null);
     String subcategory = getOptionalValue(record, headerMap, "subcategory").orElse(null);
+    
+    // Check if payment_method column exists in CSV
+    boolean hasPaymentMethodColumn = headerMap.keySet().stream()
+      .anyMatch(header -> header.equalsIgnoreCase("payment_method"));
+    
     String paymentMethodValue = getOptionalValue(record, headerMap, "payment_method").orElse("PIX");
     String accountName = getOptionalValue(record, headerMap, "account").orElse(null);
     String cardName = getOptionalValue(record, headerMap, "card").orElse(null);
@@ -102,14 +107,18 @@ public class CsvParserService {
       return CsvParsedRow.error(rowIndex, rawLine, "payment_method inválido: deve ser PIX ou CARD");
     }
 
-    // Validate PIX requires account
-    if (paymentType == PaymentType.PIX && (accountName == null || accountName.isBlank())) {
-      return CsvParsedRow.error(rowIndex, rawLine, "transação PIX requer coluna 'account'");
-    }
+    // Only validate account/card requirements if payment_method column is explicitly provided
+    // For backward compatibility, CSVs without payment_method column don't require account/card columns
+    if (hasPaymentMethodColumn) {
+      // Validate PIX requires account
+      if (paymentType == PaymentType.PIX && (accountName == null || accountName.isBlank())) {
+        return CsvParsedRow.error(rowIndex, rawLine, "transação PIX requer coluna 'account'");
+      }
 
-    // Validate CARD requires card
-    if (paymentType == PaymentType.CARD && (cardName == null || cardName.isBlank())) {
-      return CsvParsedRow.error(rowIndex, rawLine, "transação CARD requer coluna 'card'");
+      // Validate CARD requires card
+      if (paymentType == PaymentType.CARD && (cardName == null || cardName.isBlank())) {
+        return CsvParsedRow.error(rowIndex, rawLine, "transação CARD requer coluna 'card'");
+      }
     }
 
     return CsvParsedRow.parsed(

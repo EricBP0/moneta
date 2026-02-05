@@ -26,6 +26,8 @@ class CsvParserServiceTest {
     assertThat(row.description()).isEqualTo("Padaria");
     assertThat(row.amountCents()).isEqualTo(1250L);
     assertThat(row.direction()).isEqualTo(TxnDirection.IN);
+    assertThat(row.paymentType()).isNotNull();
+    assertThat(row.status()).isEqualTo(ImportRowStatus.PARSED);
   }
 
   @Test
@@ -39,6 +41,7 @@ class CsvParserServiceTest {
     var row = result.rows().get(0);
     assertThat(row.amountCents()).isEqualTo(4210L);
     assertThat(row.direction()).isEqualTo(TxnDirection.OUT);
+    assertThat(row.paymentType()).isNotNull();
   }
 
   @Test

@@ -126,13 +126,18 @@ public class ImportService {
         
         // Resolve account or card based on payment type
         if (parsedRow.paymentType() == PaymentType.PIX) {
-          Optional<Long> resolvedAccountId = resolveAccount(userId, parsedRow.accountName());
-          if (resolvedAccountId.isPresent()) {
-            row.setResolvedAccountId(resolvedAccountId.get());
-          } else {
-            row.setStatus(ImportRowStatus.ERROR);
-            row.setErrorMessage("conta não encontrada: " + parsedRow.accountName());
+          // If account name is provided in CSV, try to resolve it
+          // Otherwise, leave resolvedAccountId null to use batch account later
+          if (parsedRow.accountName() != null && !parsedRow.accountName().isBlank()) {
+            Optional<Long> resolvedAccountId = resolveAccount(userId, parsedRow.accountName());
+            if (resolvedAccountId.isPresent()) {
+              row.setResolvedAccountId(resolvedAccountId.get());
+            } else {
+              row.setStatus(ImportRowStatus.ERROR);
+              row.setErrorMessage("conta não encontrada: " + parsedRow.accountName());
+            }
           }
+          // If no account specified in CSV, resolvedAccountId remains null and batch account will be used
         } else if (parsedRow.paymentType() == PaymentType.CARD) {
           Optional<Long> resolvedCardId = resolveCard(userId, parsedRow.cardName());
           if (resolvedCardId.isPresent()) {
@@ -145,7 +150,7 @@ public class ImportService {
         
         if (row.getStatus() == ImportRowStatus.PARSED) {
           Long accountOrCardId = parsedRow.paymentType() == PaymentType.PIX 
-            ? row.getResolvedAccountId() 
+            ? (row.getResolvedAccountId() != null ? row.getResolvedAccountId() : accountId)
             : row.getResolvedCardId();
           String hash = buildHash(
             userId,
