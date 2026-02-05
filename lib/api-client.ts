@@ -3,6 +3,9 @@ import { getApiUrl } from './api'
 const accessTokenKey = 'accessToken'
 const refreshTokenKey = 'refreshToken'
 
+// Flag to prevent multiple simultaneous redirects to login
+let redirectingToLogin = false
+
 const getAccessToken = () => typeof window !== 'undefined' ? localStorage.getItem(accessTokenKey) : null
 const getRefreshToken = () => typeof window !== 'undefined' ? localStorage.getItem(refreshTokenKey) : null
 
@@ -22,6 +25,8 @@ export const storeSession = (authResponse: AuthResponse) => {
   if (typeof window === 'undefined' || !authResponse) return
   localStorage.setItem(accessTokenKey, authResponse.accessToken)
   localStorage.setItem(refreshTokenKey, authResponse.refreshToken)
+  // Reset redirect flag when new session is established
+  redirectingToLogin = false
 }
 
 export const clearSession = () => {
@@ -117,14 +122,19 @@ const refreshSession = async (): Promise<AuthResponse> => {
 }
 
 let refreshPromise: Promise<AuthResponse> | null = null
-let redirectingToLogin = false
+
+const shouldRedirectToLogin = (): boolean => {
+  return typeof window !== 'undefined' && 
+         !window.location.pathname.startsWith('/login') && 
+         !redirectingToLogin
+}
 
 const request = async <T>(method: string, path: string, body?: unknown, options: RequestOptions = {}): Promise<T> => {
   // Check for authentication token before making the request
   if (!options.skipAuth && !getAccessToken()) {
     // No token available - clear session and redirect to login
     clearSession()
-    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login') && !redirectingToLogin) {
+    if (shouldRedirectToLogin()) {
       redirectingToLogin = true
       window.location.assign('/login')
     }
@@ -149,8 +159,7 @@ const request = async <T>(method: string, path: string, body?: unknown, options:
     } catch {
       clearSession()
       // Auto-logout on 401: clear session and redirect to login
-      // Avoid loop by checking if already on login page
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login') && !redirectingToLogin) {
+      if (shouldRedirectToLogin()) {
         redirectingToLogin = true
         window.location.assign('/login')
       }
