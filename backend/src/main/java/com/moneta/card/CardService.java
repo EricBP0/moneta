@@ -6,6 +6,7 @@ import com.moneta.auth.User;
 import com.moneta.auth.UserRepository;
 import com.moneta.txn.TxnRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -165,7 +166,10 @@ public class CardService {
         usedCents = 0L;
       }
 
-      long limitCents = card.getLimitAmount().multiply(BigDecimal.valueOf(100)).longValue();
+      long limitCents = card.getLimitAmount()
+        .multiply(BigDecimal.valueOf(100))
+        .setScale(0, RoundingMode.HALF_UP)
+        .longValue();
       long availableCents = limitCents - usedCents;
       double percentUsed = limitCents == 0 ? 0.0 : (double) usedCents / (double) limitCents * 100.0;
 
