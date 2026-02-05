@@ -4,6 +4,9 @@ import com.moneta.account.Account;
 import com.moneta.account.AccountRepository;
 import com.moneta.auth.User;
 import com.moneta.auth.UserRepository;
+import com.moneta.card.Card;
+import com.moneta.card.CardRepository;
+import com.moneta.card.PaymentType;
 import com.moneta.category.Category;
 import com.moneta.category.CategoryRepository;
 import com.moneta.importer.CsvParserService.CsvParseResult;
@@ -51,6 +54,7 @@ public class ImportService {
   private final ImportRowRepository importRowRepository;
   private final UserRepository userRepository;
   private final AccountRepository accountRepository;
+  private final CardRepository cardRepository;
   private final CategoryRepository categoryRepository;
   private final TxnRepository txnRepository;
   private final CsvParserService csvParserService;
@@ -61,6 +65,7 @@ public class ImportService {
     ImportRowRepository importRowRepository,
     UserRepository userRepository,
     AccountRepository accountRepository,
+    CardRepository cardRepository,
     CategoryRepository categoryRepository,
     TxnRepository txnRepository,
     CsvParserService csvParserService,
@@ -70,6 +75,7 @@ public class ImportService {
     this.importRowRepository = importRowRepository;
     this.userRepository = userRepository;
     this.accountRepository = accountRepository;
+    this.cardRepository = cardRepository;
     this.categoryRepository = categoryRepository;
     this.txnRepository = txnRepository;
     this.csvParserService = csvParserService;
@@ -94,7 +100,7 @@ public class ImportService {
     batch.setUpdatedAt(OffsetDateTime.now());
     importBatchRepository.save(batch);
 
-    Set<String> existingHashes = buildExistingTxnHashes(userId, accountId);
+    Set<String> existingHashes = buildExistingTxnHashes(userId);
     Set<String> batchHashes = new HashSet<>();
 
     List<ImportRow> rows = new ArrayList<>();
@@ -108,22 +114,62 @@ public class ImportService {
       row.setDescription(parsedRow.description());
       row.setAmountCents(parsedRow.amountCents());
       row.setDirection(parsedRow.direction());
+      row.setPaymentType(parsedRow.paymentType());
+      row.setParsedAccountName(parsedRow.accountName());
+      row.setParsedCardName(parsedRow.cardName());
       row.setStatus(parsedRow.status());
       row.setErrorMessage(parsedRow.errorMessage());
       row.setUpdatedAt(OffsetDateTime.now());
 
       if (parsedRow.status() == ImportRowStatus.PARSED) {
         resolveCategory(userId, parsedRow.categoryName()).ifPresent(row::setResolvedCategoryId);
-        String hash = buildHash(userId, accountId, parsedRow.parsedDate(), parsedRow.amountCents(),
-          parsedRow.direction(), parsedRow.description());
-        if (existingHashes.contains(hash) || batchHashes.contains(hash)) {
-          row.setStatus(ImportRowStatus.DUPLICATE);
-          row.setErrorMessage("duplicado");
-          row.setHash(null);
-        } else {
-          row.setStatus(ImportRowStatus.READY);
-          row.setHash(hash);
-          batchHashes.add(hash);
+        
+        // Resolve account or card based on payment type
+        if (parsedRow.paymentType() == PaymentType.PIX) {
+          // If account name is provided in CSV, try to resolve it
+          // Otherwise, leave resolvedAccountId null to use batch account later
+          if (parsedRow.accountName() != null && !parsedRow.accountName().isBlank()) {
+            Optional<Long> resolvedAccountId = resolveAccount(userId, parsedRow.accountName());
+            if (resolvedAccountId.isPresent()) {
+              row.setResolvedAccountId(resolvedAccountId.get());
+            } else {
+              row.setStatus(ImportRowStatus.ERROR);
+              row.setErrorMessage("conta não encontrada: " + parsedRow.accountName());
+            }
+          }
+          // If no account specified in CSV, resolvedAccountId remains null and batch account will be used
+        } else if (parsedRow.paymentType() == PaymentType.CARD) {
+          Optional<Long> resolvedCardId = resolveCard(userId, parsedRow.cardName());
+          if (resolvedCardId.isPresent()) {
+            row.setResolvedCardId(resolvedCardId.get());
+          } else {
+            row.setStatus(ImportRowStatus.ERROR);
+            row.setErrorMessage("cartão não encontrado: " + parsedRow.cardName());
+          }
+        }
+        
+        if (row.getStatus() == ImportRowStatus.PARSED) {
+          Long accountOrCardId = parsedRow.paymentType() == PaymentType.PIX 
+            ? (row.getResolvedAccountId() != null ? row.getResolvedAccountId() : accountId)
+            : row.getResolvedCardId();
+          String hash = buildHash(
+            userId,
+            parsedRow.paymentType(),
+            accountOrCardId,
+            parsedRow.parsedDate(),
+            parsedRow.amountCents(),
+            parsedRow.direction(),
+            parsedRow.description()
+          );
+          if (existingHashes.contains(hash) || batchHashes.contains(hash)) {
+            row.setStatus(ImportRowStatus.DUPLICATE);
+            row.setErrorMessage("duplicado");
+            row.setHash(null);
+          } else {
+            row.setStatus(ImportRowStatus.READY);
+            row.setHash(hash);
+            batchHashes.add(hash);
+          }
         }
       }
 
@@ -187,7 +233,7 @@ public class ImportService {
       ? importRowRepository.findByBatchIdAndUserIdAndStatus(batchId, userId, ImportRowStatus.READY)
       : importRowRepository.findByBatchIdAndUserId(batchId, userId);
 
-    Set<String> existingHashes = buildExistingTxnHashes(userId, batch.getAccount().getId());
+    Set<String> existingHashes = buildExistingTxnHashes(userId);
     int createdCount = 0;
     int duplicateCount = 0;
     List<Txn> createdTxns = new ArrayList<>();
@@ -196,10 +242,27 @@ public class ImportService {
       if (row.getStatus() != ImportRowStatus.READY) {
         continue;
       }
+      
+      Long accountOrCardId;
+      if (row.getPaymentType() == PaymentType.PIX) {
+        accountOrCardId = row.getResolvedAccountId() != null 
+          ? row.getResolvedAccountId() 
+          : batch.getAccount().getId();
+      } else {
+        accountOrCardId = row.getResolvedCardId();
+      }
+      
       String hash = row.getHash();
       if (hash == null) {
-        hash = buildHash(userId, batch.getAccount().getId(), row.getParsedDate(), row.getAmountCents(),
-          row.getDirection(), row.getDescription());
+        hash = buildHash(
+          userId,
+          row.getPaymentType(),
+          accountOrCardId,
+          row.getParsedDate(),
+          row.getAmountCents(),
+          row.getDirection(),
+          row.getDescription()
+        );
       }
       if (skipDuplicates && existingHashes.contains(hash)) {
         row.setStatus(ImportRowStatus.DUPLICATE);
@@ -321,33 +384,70 @@ public class ImportService {
       .map(Category::getId);
   }
 
-  private Set<String> buildExistingTxnHashes(Long userId, Long accountId) {
-    List<Txn> txns = txnRepository.findByUserIdAndAccountIdAndIsActiveTrue(userId, accountId);
+  private Optional<Long> resolveAccount(Long userId, String name) {
+    if (name == null || name.isBlank()) {
+      return Optional.empty();
+    }
+    // Try to resolve by ID first
+    try {
+      Long id = Long.parseLong(name.trim());
+      return accountRepository.findByIdAndUserId(id, userId).map(Account::getId);
+    } catch (NumberFormatException e) {
+      // Not an ID, try by name
+      return accountRepository.findByUserIdAndNameIgnoreCaseAndIsActiveTrue(userId, name.trim())
+        .map(Account::getId);
+    }
+  }
+
+  private Optional<Long> resolveCard(Long userId, String name) {
+    if (name == null || name.isBlank()) {
+      return Optional.empty();
+    }
+    // Try to resolve by ID first
+    try {
+      Long id = Long.parseLong(name.trim());
+      return cardRepository.findByIdAndUserIdAndIsActiveTrue(id, userId).map(Card::getId);
+    } catch (NumberFormatException e) {
+      // Not an ID, try by name
+      return cardRepository.findByUserIdAndNameIgnoreCaseAndIsActiveTrue(userId, name.trim())
+        .map(Card::getId);
+    }
+  }
+
+  private Set<String> buildExistingTxnHashes(Long userId) {
+    List<Txn> txns = txnRepository.findAllByUserIdAndIsActiveTrue(userId);
     Set<String> hashes = new HashSet<>();
     for (Txn txn : txns) {
       LocalDate date = txn.getOccurredAt().toLocalDate();
-      hashes.add(buildHash(
-        userId,
-        accountId,
-        date,
-        txn.getAmountCents(),
-        txn.getDirection(),
-        txn.getDescription()
-      ));
+      Long accountOrCardId = txn.getPaymentType() == PaymentType.PIX 
+        ? (txn.getAccount() != null ? txn.getAccount().getId() : null)
+        : (txn.getCard() != null ? txn.getCard().getId() : null);
+      if (accountOrCardId != null) {
+        hashes.add(buildHash(
+          userId,
+          txn.getPaymentType(),
+          accountOrCardId,
+          date,
+          txn.getAmountCents(),
+          txn.getDirection(),
+          txn.getDescription()
+        ));
+      }
     }
     return hashes;
   }
 
   private String buildHash(
     Long userId,
-    Long accountId,
+    PaymentType paymentType,
+    Long accountOrCardId,
     LocalDate date,
     Long amountCents,
     TxnDirection direction,
     String description
   ) {
     String normalizedDescription = normalizeDescription(description);
-    String input = userId + "|" + accountId + "|" + date + "|" + amountCents + "|" + direction + "|"
+    String input = userId + "|" + paymentType + "|" + accountOrCardId + "|" + date + "|" + amountCents + "|" + direction + "|"
       + normalizedDescription;
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -368,7 +468,23 @@ public class ImportService {
   private Txn buildTxnFromRow(ImportBatch batch, ImportRow row) {
     Txn txn = new Txn();
     txn.setUser(batch.getUser());
-    txn.setAccount(batch.getAccount());
+    txn.setPaymentType(row.getPaymentType());
+    
+    if (row.getPaymentType() == PaymentType.PIX) {
+      Long accountId = row.getResolvedAccountId() != null 
+        ? row.getResolvedAccountId() 
+        : batch.getAccount().getId();
+      Account account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new IllegalStateException("conta não encontrada"));
+      txn.setAccount(account);
+      txn.setCard(null);
+    } else if (row.getPaymentType() == PaymentType.CARD) {
+      Card card = cardRepository.findById(row.getResolvedCardId())
+        .orElseThrow(() -> new IllegalStateException("cartão não encontrado"));
+      txn.setCard(card);
+      txn.setAccount(null);
+    }
+    
     txn.setAmountCents(row.getAmountCents());
     txn.setDirection(row.getDirection());
     txn.setDescription(row.getDescription());

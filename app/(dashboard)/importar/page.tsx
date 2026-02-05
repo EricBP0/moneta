@@ -122,10 +122,11 @@ export default function ImportPage() {
 
   const downloadTemplate = () => {
     const csvContent = [
-      "data,descricao,valor,tipo",
-      "2024-01-15,Supermercado Exemplo,15000,OUT",
-      "2024-01-16,Salario,500000,IN",
-      "2024-01-17,Restaurante,8500,OUT",
+      "date,description,amount,payment_method,account,card,category",
+      "2024-01-15,Supermercado,-150.50,PIX,Conta Corrente,,Alimentação",
+      "2024-01-16,Posto de gasolina,-200.00,CARD,,Cartão Nubank,Transporte",
+      "2024-01-17,Salário,5000.00,PIX,Conta Corrente,,Receita",
+      "2024-01-18,Farmácia,-45.80,CARD,,Cartão Nubank,Saúde",
     ].join("\n")
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
@@ -197,49 +198,87 @@ export default function ImportPage() {
             <div className="p-3 rounded-lg bg-secondary/50 border border-border">
               <p className="font-medium text-foreground mb-1">CSV</p>
               <p className="text-xs text-muted-foreground">
-                Arquivo de texto com colunas: data, descricao, valor, tipo
+                Arquivo de texto com transações PIX e/ou CARTÃO
               </p>
             </div>
           </div>
 
           <div>
             <h3 className="font-medium text-foreground mb-2">Formato CSV esperado</h3>
-            <div className="p-3 rounded-lg bg-secondary border border-border font-mono text-sm">
+            <div 
+              className="p-3 rounded-lg bg-secondary border border-border font-mono text-xs overflow-x-auto"
+              role="region"
+              aria-label="Exemplo de formato CSV com colunas: date, description, amount, payment_method, account, card, category"
+            >
               <p className="text-muted-foreground mb-2"># Cabeçalho (obrigatório)</p>
-              <p className="text-foreground">data,descricao,valor,tipo</p>
+              <p className="text-foreground whitespace-nowrap">date,description,amount,payment_method,account,card,category</p>
               <p className="text-muted-foreground mt-2 mb-2"># Exemplos de linhas</p>
-              <p className="text-foreground">2024-01-15,Supermercado Exemplo,15000,OUT</p>
-              <p className="text-foreground">2024-01-16,Salario,500000,IN</p>
+              <p className="text-foreground whitespace-nowrap">2024-01-15,Supermercado,-150.50,PIX,Conta Corrente,,Alimentação</p>
+              <p className="text-foreground whitespace-nowrap">2024-01-16,Posto de gasolina,-200.00,CARD,,Cartão Nubank,Transporte</p>
+              <p className="text-foreground whitespace-nowrap">2024-01-17,Salário,5000.00,PIX,Conta Corrente,,Receita</p>
             </div>
             <div className="mt-3 space-y-2 text-sm">
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <div>
-                  <strong className="text-foreground">data:</strong>
-                  <span className="text-muted-foreground"> Formato YYYY-MM-DD (ex: 2024-01-15)</span>
+                  <strong className="text-foreground">date</strong>
+                  <span className="text-muted-foreground"> (obrigatório): Formato YYYY-MM-DD (ex: 2024-01-15)</span>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <div>
-                  <strong className="text-foreground">descricao:</strong>
-                  <span className="text-muted-foreground"> Texto descritivo da transação</span>
+                  <strong className="text-foreground">description</strong>
+                  <span className="text-muted-foreground"> (obrigatório): Texto descritivo da transação</span>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <div>
-                  <strong className="text-foreground">valor:</strong>
-                  <span className="text-muted-foreground"> Valor em centavos (ex: 15000 = R$ 150,00)</span>
+                  <strong className="text-foreground">amount</strong>
+                  <span className="text-muted-foreground"> (obrigatório): Valor em reais. Use negativo para despesas (ex: -150.50 ou 5000.00)</span>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <div>
-                  <strong className="text-foreground">tipo:</strong>
-                  <span className="text-muted-foreground"> IN (entrada) ou OUT (saída)</span>
+                  <strong className="text-foreground">payment_method</strong>
+                  <span className="text-muted-foreground"> (opcional): "PIX" ou "CARD" (padrão: PIX)</span>
                 </div>
               </div>
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong className="text-foreground">account</strong>
+                  <span className="text-muted-foreground"> (obrigatório para PIX): Nome da conta (ex: "Conta Corrente")</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong className="text-foreground">card</strong>
+                  <span className="text-muted-foreground"> (obrigatório para CARD): Nome do cartão (ex: "Cartão Nubank")</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong className="text-foreground">category</strong>
+                  <span className="text-muted-foreground"> (opcional): Nome da categoria (ex: "Alimentação")</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Important notes */}
+            <div className="mt-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <p className="text-sm font-medium text-foreground mb-2">📝 Notas importantes:</p>
+              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <li>O arquivo pode conter uma mistura de transações PIX e CARTÃO</li>
+                <li>Para transações PIX, a coluna "account" deve conter o nome da conta</li>
+                <li>Para transações CARTÃO, defina payment_method=CARD e especifique o cartão na coluna "card"</li>
+                <li>Se payment_method não for especificado, assume-se PIX como padrão</li>
+                <li>A conta selecionada abaixo será usada para associação do lote de importação</li>
+              </ul>
             </div>
           </div>
 
@@ -267,7 +306,7 @@ export default function ImportPage() {
           <form onSubmit={submitImport} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Conta</Label>
+                <Label>Conta (para associação do lote)</Label>
                 <Select value={accountId} onValueChange={setAccountId}>
                   <SelectTrigger className="bg-input border-border">
                     <SelectValue placeholder="Selecione" />
@@ -278,6 +317,9 @@ export default function ImportPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Conta usada para associar o lote de importação. Transações individuais usam a conta/cartão do CSV.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Arquivo</Label>

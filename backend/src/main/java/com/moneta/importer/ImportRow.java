@@ -1,6 +1,7 @@
 package com.moneta.importer;
 
 import com.moneta.auth.User;
+import com.moneta.card.PaymentType;
 import com.moneta.txn.TxnDirection;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -50,11 +51,27 @@ public class ImportRow {
   @Column
   private TxnDirection direction;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "payment_type", nullable = false)
+  private PaymentType paymentType = PaymentType.PIX;
+
+  @Column(name = "parsed_account_name")
+  private String parsedAccountName;
+
+  @Column(name = "parsed_card_name")
+  private String parsedCardName;
+
   @Column(name = "resolved_category_id")
   private Long resolvedCategoryId;
 
   @Column(name = "resolved_subcategory_id")
   private Long resolvedSubcategoryId;
+
+  @Column(name = "resolved_account_id")
+  private Long resolvedAccountId;
+
+  @Column(name = "resolved_card_id")
+  private Long resolvedCardId;
 
   @Column
   private String hash;
@@ -143,6 +160,30 @@ public class ImportRow {
     this.direction = direction;
   }
 
+  public PaymentType getPaymentType() {
+    return paymentType;
+  }
+
+  public void setPaymentType(PaymentType paymentType) {
+    this.paymentType = paymentType;
+  }
+
+  public String getParsedAccountName() {
+    return parsedAccountName;
+  }
+
+  public void setParsedAccountName(String parsedAccountName) {
+    this.parsedAccountName = parsedAccountName;
+  }
+
+  public String getParsedCardName() {
+    return parsedCardName;
+  }
+
+  public void setParsedCardName(String parsedCardName) {
+    this.parsedCardName = parsedCardName;
+  }
+
   public Long getResolvedCategoryId() {
     return resolvedCategoryId;
   }
@@ -157,6 +198,22 @@ public class ImportRow {
 
   public void setResolvedSubcategoryId(Long resolvedSubcategoryId) {
     this.resolvedSubcategoryId = resolvedSubcategoryId;
+  }
+
+  public Long getResolvedAccountId() {
+    return resolvedAccountId;
+  }
+
+  public void setResolvedAccountId(Long resolvedAccountId) {
+    this.resolvedAccountId = resolvedAccountId;
+  }
+
+  public Long getResolvedCardId() {
+    return resolvedCardId;
+  }
+
+  public void setResolvedCardId(Long resolvedCardId) {
+    this.resolvedCardId = resolvedCardId;
   }
 
   public String getHash() {

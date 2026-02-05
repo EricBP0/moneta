@@ -1,5 +1,6 @@
 package com.moneta.importer;
 
+import com.moneta.card.PaymentType;
 import com.moneta.txn.TxnDirection;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,6 +62,14 @@ public class CsvParserService {
     String amountValue = getValue(record, headerMap, "amount");
     String category = getOptionalValue(record, headerMap, "category").orElse(null);
     String subcategory = getOptionalValue(record, headerMap, "subcategory").orElse(null);
+    
+    // Check if payment_method column exists in CSV
+    boolean hasPaymentMethodColumn = headerMap.keySet().stream()
+      .anyMatch(header -> header.equalsIgnoreCase("payment_method"));
+    
+    String paymentMethodValue = getOptionalValue(record, headerMap, "payment_method").orElse("PIX");
+    String accountName = getOptionalValue(record, headerMap, "account").orElse(null);
+    String cardName = getOptionalValue(record, headerMap, "card").orElse(null);
 
     if (dateValue == null || dateValue.isBlank()) {
       return CsvParsedRow.error(rowIndex, rawLine, "data inválida");
@@ -90,6 +99,28 @@ public class CsvParserService {
     TxnDirection direction = amount.signum() < 0 ? TxnDirection.OUT : TxnDirection.IN;
     long amountCents = amount.abs().movePointRight(2).longValue();
 
+    // Parse payment method
+    PaymentType paymentType;
+    try {
+      paymentType = PaymentType.valueOf(paymentMethodValue.trim().toUpperCase());
+    } catch (IllegalArgumentException ex) {
+      return CsvParsedRow.error(rowIndex, rawLine, "payment_method inválido: deve ser PIX ou CARD");
+    }
+
+    // Only validate account/card requirements if payment_method column is explicitly provided
+    // For backward compatibility, CSVs without payment_method column don't require account/card columns
+    if (hasPaymentMethodColumn) {
+      // Validate PIX requires account
+      if (paymentType == PaymentType.PIX && (accountName == null || accountName.isBlank())) {
+        return CsvParsedRow.error(rowIndex, rawLine, "transação PIX requer coluna 'account'");
+      }
+
+      // Validate CARD requires card
+      if (paymentType == PaymentType.CARD && (cardName == null || cardName.isBlank())) {
+        return CsvParsedRow.error(rowIndex, rawLine, "transação CARD requer coluna 'card'");
+      }
+    }
+
     return CsvParsedRow.parsed(
       rowIndex,
       rawLine,
@@ -97,6 +128,9 @@ public class CsvParserService {
       description,
       amountCents,
       direction,
+      paymentType,
+      accountName,
+      cardName,
       category,
       subcategory
     );
@@ -133,6 +167,9 @@ public class CsvParserService {
     String description,
     Long amountCents,
     TxnDirection direction,
+    PaymentType paymentType,
+    String accountName,
+    String cardName,
     String categoryName,
     String subcategoryName,
     ImportRowStatus status,
@@ -145,6 +182,9 @@ public class CsvParserService {
       String description,
       Long amountCents,
       TxnDirection direction,
+      PaymentType paymentType,
+      String accountName,
+      String cardName,
       String categoryName,
       String subcategoryName
     ) {
@@ -155,6 +195,9 @@ public class CsvParserService {
         description,
         amountCents,
         direction,
+        paymentType,
+        accountName,
+        cardName,
         categoryName,
         subcategoryName,
         ImportRowStatus.PARSED,
@@ -168,6 +211,9 @@ public class CsvParserService {
         rawLine,
         null,
         null,
+        null,
+        null,
+        PaymentType.PIX, // Default payment type for error rows to satisfy NOT NULL constraint
         null,
         null,
         null,

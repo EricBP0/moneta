@@ -12,6 +12,9 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Progress } from "@/components/ui/progress"
+import { Checkbox } from "@/components/ui/checkbox"
+import { WidgetConfig, WIDGET_KEYS } from "@/lib/types/dashboard"
+import { CardLimitsWidget } from "@/components/dashboard/CardLimitsWidget"
 import {
   TrendingUp,
   TrendingDown,
@@ -24,6 +27,7 @@ import {
   GripVertical,
   LayoutDashboard,
   RefreshCw,
+  CreditCard,
 } from "lucide-react"
 import {
   DndContext,
@@ -91,7 +95,34 @@ interface Category {
   color: string | null
 }
 
-type DashboardCardType = "accounts" | "categories" | "budgets" | "alerts" | "goals"
+type DashboardCardType = "accounts" | "categories" | "budgets" | "alerts" | "goals" | "card_limits"
+
+// Note: SUMMARY widget controls both 'accounts' and 'categories' cards
+// These two cards are always shown together as part of the summary section
+const WIDGET_KEY_TO_CARD_TYPE: Record<string, DashboardCardType> = {
+  [WIDGET_KEYS.SUMMARY]: "accounts",
+  [WIDGET_KEYS.BUDGETS]: "budgets",
+  [WIDGET_KEYS.GOALS]: "goals",
+  [WIDGET_KEYS.ALERTS]: "alerts",
+  [WIDGET_KEYS.CARD_LIMITS]: "card_limits",
+}
+
+const CARD_TYPE_TO_WIDGET_KEY: Record<DashboardCardType, string> = {
+  accounts: WIDGET_KEYS.SUMMARY,
+  categories: WIDGET_KEYS.SUMMARY, // Both accounts and categories map to SUMMARY
+  budgets: WIDGET_KEYS.BUDGETS,
+  alerts: WIDGET_KEYS.ALERTS,
+  goals: WIDGET_KEYS.GOALS,
+  card_limits: WIDGET_KEYS.CARD_LIMITS,
+}
+
+const WIDGET_LABELS: Record<string, string> = {
+  [WIDGET_KEYS.SUMMARY]: "Resumo",
+  [WIDGET_KEYS.BUDGETS]: "Orçamentos",
+  [WIDGET_KEYS.GOALS]: "Metas",
+  [WIDGET_KEYS.ALERTS]: "Alertas",
+  [WIDGET_KEYS.CARD_LIMITS]: "Limites de Cartão",
+}
 
 const DEFAULT_CARD_ORDER: DashboardCardType[] = [
   "accounts",
@@ -99,6 +130,7 @@ const DEFAULT_CARD_ORDER: DashboardCardType[] = [
   "budgets",
   "alerts",
   "goals",
+  "card_limits",
 ]
 
 interface SortableCardProps {
@@ -148,6 +180,7 @@ export default function DashboardPage() {
   const [error, setError] = useState("")
   const [isEditMode, setIsEditMode] = useState(false)
   const [cardOrder, setCardOrder] = useState<DashboardCardType[]>(DEFAULT_CARD_ORDER)
+  const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfig[]>([])
   const { addToast } = useAppToast()
 
   const sensors = useSensors(
@@ -184,37 +217,66 @@ export default function DashboardPage() {
     }
   }, [month, addToast])
 
+  const loadWidgetConfigs = useCallback(async () => {
+    try {
+      const configs = await apiClient.get<WidgetConfig[]>("/api/dashboard/widgets")
+      setWidgetConfigs(configs || [])
+      
+      // Build card order from widget configs
+      const enabledWidgets = configs
+        .filter(w => w.isEnabled)
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+      
+      const newOrder: DashboardCardType[] = []
+      
+      // Always include accounts and categories first (from SUMMARY widget)
+      const summaryWidget = enabledWidgets.find(w => w.widgetKey === WIDGET_KEYS.SUMMARY)
+      if (summaryWidget) {
+        newOrder.push("accounts", "categories")
+      }
+      
+      // Add other widgets
+      enabledWidgets.forEach(widget => {
+        if (widget.widgetKey !== WIDGET_KEYS.SUMMARY && WIDGET_KEY_TO_CARD_TYPE[widget.widgetKey]) {
+          newOrder.push(WIDGET_KEY_TO_CARD_TYPE[widget.widgetKey])
+        }
+      })
+      
+      setCardOrder(newOrder)
+    } catch (err) {
+      // Fallback to localStorage or default
+      const savedLayout = localStorage.getItem("dashboard-card-order")
+      if (savedLayout) {
+        try {
+          const parsed = JSON.parse(savedLayout) as DashboardCardType[]
+          if (Array.isArray(parsed)) {
+            setCardOrder(parsed)
+          }
+        } catch {
+          setCardOrder(DEFAULT_CARD_ORDER)
+        }
+      }
+    } finally {
+    }
+  }, [])
+
+  const saveWidgetConfigs = useCallback(async (configs: WidgetConfig[]) => {
+    try {
+      await apiClient.put("/api/dashboard/widgets", { widgets: configs })
+      addToast("Configuração salva com sucesso.", "success")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao salvar configuração"
+      addToast(message, "error")
+    }
+  }, [addToast])
+
   useEffect(() => {
     loadDashboard()
   }, [loadDashboard])
 
   useEffect(() => {
-    // Load saved layout from localStorage
-    const savedLayout = localStorage.getItem("dashboard-card-order")
-    if (savedLayout) {
-      try {
-        const parsed = JSON.parse(savedLayout) as DashboardCardType[]
-        
-        // Validate the parsed layout
-        const isValid = Array.isArray(parsed) && 
-          parsed.every(id => DEFAULT_CARD_ORDER.includes(id)) &&
-          parsed.length === DEFAULT_CARD_ORDER.length &&
-          new Set(parsed).size === parsed.length
-        
-        if (isValid) {
-          setCardOrder(parsed)
-        } else {
-          // Invalid layout: reset to default
-          localStorage.removeItem("dashboard-card-order")
-          setCardOrder(DEFAULT_CARD_ORDER)
-        }
-      } catch {
-        // If parsing fails, use default
-        localStorage.removeItem("dashboard-card-order")
-        setCardOrder(DEFAULT_CARD_ORDER)
-      }
-    }
-  }, [])
+    loadWidgetConfigs()
+  }, [loadWidgetConfigs])
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -224,26 +286,71 @@ export default function DashboardPage() {
         const oldIndex = items.indexOf(active.id as DashboardCardType)
         const newIndex = items.indexOf(over.id as DashboardCardType)
         
-        // Guard against invalid indices; if found, reset layout and stored order
         if (oldIndex < 0 || newIndex < 0) {
-          localStorage.removeItem("dashboard-card-order")
-          return DEFAULT_CARD_ORDER
+          return items
         }
         
         const newOrder = arrayMove(items, oldIndex, newIndex)
         
-        // Save to localStorage
+        // Save to localStorage as backup
         localStorage.setItem("dashboard-card-order", JSON.stringify(newOrder))
+        
+        // Build updated widget configs with new display order
+        const updatedConfigs = [...widgetConfigs]
+        const cardTypeToOrderMap = new Map<string, number>()
+        
+        newOrder.forEach((cardType, index) => {
+          const widgetKey = CARD_TYPE_TO_WIDGET_KEY[cardType]
+          if (widgetKey && !cardTypeToOrderMap.has(widgetKey)) {
+            cardTypeToOrderMap.set(widgetKey, index)
+          }
+        })
+        
+        updatedConfigs.forEach(config => {
+          const newDisplayOrder = cardTypeToOrderMap.get(config.widgetKey)
+          if (newDisplayOrder !== undefined) {
+            config.displayOrder = newDisplayOrder
+          }
+        })
+        
+        setWidgetConfigs(updatedConfigs)
+        saveWidgetConfigs(updatedConfigs)
         
         return newOrder
       })
     }
   }
 
-  const resetLayout = () => {
-    setCardOrder(DEFAULT_CARD_ORDER)
-    localStorage.removeItem("dashboard-card-order")
-    addToast("Layout restaurado para o padrão.", "success")
+  const handleWidgetToggle = (widgetKey: string, enabled: boolean) => {
+    const updatedConfigs = widgetConfigs.map(config => 
+      config.widgetKey === widgetKey ? { ...config, isEnabled: enabled } : config
+    )
+    setWidgetConfigs(updatedConfigs)
+    
+    // Update card order to reflect enabled/disabled widgets
+    const enabledWidgets = updatedConfigs
+      .filter(w => w.isEnabled)
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+    
+    const newOrder: DashboardCardType[] = []
+    const summaryWidget = enabledWidgets.find(w => w.widgetKey === WIDGET_KEYS.SUMMARY)
+    if (summaryWidget) {
+      newOrder.push("accounts", "categories")
+    }
+    
+    enabledWidgets.forEach(widget => {
+      if (widget.widgetKey !== WIDGET_KEYS.SUMMARY && WIDGET_KEY_TO_CARD_TYPE[widget.widgetKey]) {
+        newOrder.push(WIDGET_KEY_TO_CARD_TYPE[widget.widgetKey])
+      }
+    })
+    
+    setCardOrder(newOrder)
+    saveWidgetConfigs(updatedConfigs)
+  }
+
+  const resetLayout = async () => {
+    await loadWidgetConfigs()
+    addToast("Layout restaurado.", "success")
   }
 
   const renderAccountsCard = () => (
@@ -496,6 +603,8 @@ export default function DashboardPage() {
           return renderAlertsCard()
         case "goals":
           return renderGoalsCard()
+        case "card_limits":
+          return <CardLimitsWidget />
         default:
           return null
       }
@@ -545,20 +654,43 @@ export default function DashboardPage() {
             onClick={() => setIsEditMode(!isEditMode)}
           >
             <LayoutDashboard className="h-4 w-4 mr-2" />
-            {isEditMode ? "Concluir" : "Editar Layout"}
+            {isEditMode ? "Concluir" : "Personalizar"}
           </Button>
         </div>
       </div>
 
       {isEditMode && (
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="flex items-center justify-between py-4">
-            <p className="text-sm text-foreground">
-              Arraste os cards pela alça para reorganizar o layout. As alterações são salvas automaticamente.
-            </p>
-            <Button variant="outline" size="sm" onClick={resetLayout}>
-              Restaurar Padrão
-            </Button>
+          <CardContent className="py-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-foreground">
+                Arraste os cards pela alça para reorganizar o layout. As alterações são salvas automaticamente.
+              </p>
+              <Button variant="outline" size="sm" onClick={resetLayout}>
+                Restaurar Padrão
+              </Button>
+            </div>
+            
+            <div className="pt-4 border-t border-border">
+              <h3 className="text-sm font-medium mb-3">Widgets Visíveis</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {widgetConfigs.map(widget => (
+                  <div key={widget.widgetKey} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={widget.widgetKey}
+                      checked={widget.isEnabled}
+                      onCheckedChange={(checked) => handleWidgetToggle(widget.widgetKey, checked === true)}
+                    />
+                    <label
+                      htmlFor={widget.widgetKey}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {WIDGET_LABELS[widget.widgetKey] || widget.widgetKey}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

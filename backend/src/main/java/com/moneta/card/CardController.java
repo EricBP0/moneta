@@ -1,5 +1,6 @@
 package com.moneta.card;
 
+import com.moneta.card.CardDtos.CardLimitSummary;
 import com.moneta.card.CardDtos.CardResponse;
 import com.moneta.card.CardDtos.CreateCardRequest;
 import com.moneta.card.CardDtos.UpdateCardRequest;
@@ -8,6 +9,7 @@ import com.moneta.config.UserPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -84,6 +86,15 @@ public class CardController {
     @RequestParam @Min(value = 1, message = "mês deve estar entre 1 e 12") @Max(value = 12, message = "mês deve estar entre 1 e 12") int month
   ) {
     return cardInvoiceService.getInvoice(principal.getId(), id, year, month);
+  }
+
+  @GetMapping("/limit-summary")
+  public List<CardLimitSummary> getLimitSummary(
+    @AuthenticationPrincipal UserPrincipal principal,
+    @RequestParam(required = false) String asOf
+  ) {
+    LocalDate asOfDate = asOf != null ? LocalDate.parse(asOf) : null;
+    return cardService.getLimitSummary(principal.getId(), asOfDate);
   }
 
   private CardResponse toResponse(Card card) {

@@ -52,4 +52,15 @@ public class DashboardDtos {
     String targetDate,
     String status
   ) {}
+
+  public record WidgetConfigDto(
+    String widgetKey,
+    boolean isEnabled,
+    int displayOrder,
+    String settingsJson
+  ) {}
+
+  public record WidgetConfigUpdateRequest(
+    List<WidgetConfigDto> widgets
+  ) {}
 }
