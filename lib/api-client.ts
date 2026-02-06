@@ -3,6 +3,9 @@ import { getApiUrl } from './api'
 const accessTokenKey = 'accessToken'
 const refreshTokenKey = 'refreshToken'
 
+// Flag to prevent multiple simultaneous redirects to login
+let redirectingToLogin = false
+
 const getAccessToken = () => typeof window !== 'undefined' ? localStorage.getItem(accessTokenKey) : null
 const getRefreshToken = () => typeof window !== 'undefined' ? localStorage.getItem(refreshTokenKey) : null
 
@@ -22,6 +25,8 @@ export const storeSession = (authResponse: AuthResponse) => {
   if (typeof window === 'undefined' || !authResponse) return
   localStorage.setItem(accessTokenKey, authResponse.accessToken)
   localStorage.setItem(refreshTokenKey, authResponse.refreshToken)
+  // Reset redirect flag when new session is established
+  redirectingToLogin = false
 }
 
 export const clearSession = () => {
@@ -118,7 +123,32 @@ const refreshSession = async (): Promise<AuthResponse> => {
 
 let refreshPromise: Promise<AuthResponse> | null = null
 
+const shouldRedirectToLogin = (): boolean => {
+  if (typeof window === 'undefined' || window.location.pathname.startsWith('/login')) {
+    return false
+  }
+  
+  // Check flag so we only perform a single redirect to the login page
+  if (redirectingToLogin) {
+    return false
+  }
+  
+  // Set flag before redirecting to avoid triggering multiple redirects
+  redirectingToLogin = true
+  return true
+}
+
 const request = async <T>(method: string, path: string, body?: unknown, options: RequestOptions = {}): Promise<T> => {
+  // Check for authentication token before making the request
+  if (!options.skipAuth && !getAccessToken()) {
+    // No token available - clear session and redirect to login
+    clearSession()
+    if (shouldRedirectToLogin()) {
+      window.location.assign('/login')
+    }
+    throw new Error('Autenticação necessária. Por favor, faça login.')
+  }
+
   const config: RequestInit = {
     method,
     headers: buildHeaders(options, method, body !== undefined),
@@ -137,11 +167,10 @@ const request = async <T>(method: string, path: string, body?: unknown, options:
     } catch {
       clearSession()
       // Auto-logout on 401: clear session and redirect to login
-      // Avoid loop by checking if already on login page
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+      if (shouldRedirectToLogin()) {
         window.location.assign('/login')
       }
-      throw new Error('Session expired')
+      throw new Error('Sessão expirada')
     }
   }
   return handleResponse(response)
